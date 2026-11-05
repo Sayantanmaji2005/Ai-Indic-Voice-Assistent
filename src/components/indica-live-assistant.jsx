@@ -18,6 +18,7 @@ export function IndicaLiveAssistant({
     const [state, setState] = useState("listening"); // 'listening' | 'thinking' | 'speaking' | 'idle'
     const [selectedLanguage, setSelectedLanguage] = useState(initialLanguage);
     const [activeAgent, setActiveAgent] = useState(() => getVoiceAgentForLanguage(initialLanguage === "auto" ? "hi" : initialLanguage));
+    const [detectedLangCode, setDetectedLangCode] = useState(null);
     const [langDropdownOpen, setLangDropdownOpen] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [audioVolume, setAudioVolume] = useState(0); // 0.0 to 1.0
@@ -299,12 +300,12 @@ export function IndicaLiveAssistant({
                         isProcessingTurnRef.current = false;
                         if (!isMutedRef.current) {
                             setState("listening");
-                            // 250ms room clearance buffer before reactivating microphone
+                            // 100ms swift clearance buffer before reactivating microphone
                             setTimeout(() => {
                                 if (stateRef.current === "listening" && !isMutedRef.current) {
                                     startListeningRef.current?.();
                                 }
-                            }, 250);
+                            }, 100);
                         } else {
                             setState("idle");
                         }
@@ -356,6 +357,7 @@ export function IndicaLiveAssistant({
 
             if (data.language) {
                 detectedLanguageRef.current = data.language;
+                setDetectedLangCode(data.language);
             }
 
             if (data.agent) {
@@ -485,10 +487,12 @@ export function IndicaLiveAssistant({
             recognition.onresult = (event) => {
                 let finalTranscript = "";
                 let interimTranscript = "";
+                let hasFinal = false;
                 for (let i = 0; i < event.results.length; i++) {
                     const textPiece = event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
                         finalTranscript += textPiece + " ";
+                        hasFinal = true;
                     } else {
                         interimTranscript += textPiece;
                     }
@@ -500,10 +504,11 @@ export function IndicaLiveAssistant({
                     userSpokeRef.current = true;
                     setCurrentUserText(liveText);
 
-                    // Adaptive turn-taking pause detection (1.8s - 2.0s based on phrase length)
+                    // Rapid, natural turn-taking (like real human conversation):
+                    // When sentence receives isFinal: 650ms (quick response)
+                    // While interim words are still streaming: 1050ms
                     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-                    const wordCount = liveText.split(/\s+/).length;
-                    const pauseThreshold = wordCount > 4 ? 1800 : 2000;
+                    const pauseThreshold = hasFinal ? 650 : 1050;
 
                     silenceTimerRef.current = setTimeout(() => {
                         if (stateRef.current === "listening" && liveText.length > 0) {
@@ -913,7 +918,11 @@ export function IndicaLiveAssistant({
                     <span className="indica-agent-dot" style={{ backgroundColor: activeAgent.avatarColor || "#0284c7" }} />
                     <span className="indica-agent-name">Indica</span>
                     <span className="indica-agent-sep">•</span>
-                    <span className="indica-agent-lang">{activeAgent.nativeLanguage} Voice</span>
+                    <span className="indica-agent-lang">
+                        {selectedLanguage === "auto" && detectedLangCode
+                            ? `✨ ${languageByCode(detectedLangCode).nativeLabel} Voice`
+                            : `${activeAgent.nativeLanguage} Voice`}
+                    </span>
                 </div>
 
                 {/* TYPOGRAPHY HEADINGS */}

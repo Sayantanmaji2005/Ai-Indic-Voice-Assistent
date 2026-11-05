@@ -59,12 +59,12 @@ export function isMarathiPhoneticsInDevanagari(text) {
 const romanizedIndicPatterns = [
     // Banglish / Bengali keywords (distinctive spoken Romanized Bengali)
     {
-        pattern: /(?:\b|_)(?:kemon|kothay|kokhon|keno|bolun|ache|achen|achho|achhen|hobe|dhonnobad|namaskar|amra|amader|amar|tumi|tomar|tomake|apni|apnar|apnake|korun|holo|kore|bhalo|shunun|shuncho|jani|kichu|ekhon|khobor|songe|parbo|chai|thik|dekho|shunchen|dada|shob|sobai|shobai|eto|sheta|eta|konte|kisher|noy|nei|thake|bolte|parbe|jante|ashun|kolkatar|dhakar|kolkatai|kolkatate|uttor|shotti|bujhte|bolchi|korchi|jachhi|khub|baje|shundor|bortoman|prodhan\s+montri|abishkar|aviscar|coleche|koreche|koto\s+guli|somoy|tarikh|ajke|ajker|dekhao|shunao|golpo|ekta|duto)(?:\b|_)/i,
+        pattern: /(?:\b|_)(?:kemon|kothay|kokhon|keno|bolun|ache|achen|achho|achhen|achis|hobe|dhonnobad|namaskar|amra|amader|amar|tumi|tomar|tomake|apni|apnar|apnake|korun|holo|kore|bhalo|shunun|shuncho|jani|kichu|ekhon|khobor|songe|parbo|chai|thik|dekho|shunchen|dada|shob|sobai|shobai|eto|sheta|eta|konte|kisher|noy|nei|thake|bolte|parbe|jante|ashun|kolkatar|dhakar|kolkatai|kolkatate|uttor|shotti|bujhte|bujhlen|bujhecho|bolchi|korchi|jachhi|khub|baje|shundor|bortoman|prodhan\s+montri|abishkar|aviscar|coleche|koreche|koto\s+guli|somoy|tarikh|ajke|ajker|dekhao|shunao|golpo|ekta|duto|ki\s+khobor|ki\s+obostha|bhalo\s+achi|ami\s+bolchi|shunte\s+pachho|shunte\s+paccho|shunte\s+pachhen|shuno|bhai|bhaia|apnar\s+naam|tomar\s+naam|naam\s+ki|ki\s+naam|kothao|konodin|kono)(?:\b|_)/i,
         lang: "bn",
     },
     // Hinglish / Hindi keywords (distinctive spoken Romanized Hindi)
     {
-        pattern: /(?:\b|_)(?:kya|kaise|kaun|kab|kahan|kyu|kyun|batao|bataiye|hai|hain|hota|hoti|hoga|hogi|shukriya|namaste|dhanyawad|aap|aapka|aapko|mera|meri|hum|humko|hamara|mein|kijiye|karna|chahiye|sunao|khabar|saath|sakta|sakti|sakte|sunie|itna|yeh|woh|kaunsa|kiska|kiski|nahi|nahin|raha|rahi|rahe|kahani|batayein|samjhao)(?:\b|_)/i,
+        pattern: /(?:\b|_)(?:kya|kaise|kaun|kab|kahan|kyu|kyun|batao|bataiye|hai|hain|hota|hoti|hoga|hogi|shukriya|namaste|dhanyawad|aap|aapka|aapko|mera|meri|hum|humko|hamara|mein|kijiye|karna|chahiye|sunao|khabar|saath|sakta|sakti|sakte|sunie|itna|yeh|woh|kaunsa|kiska|kiski|nahi|nahin|raha|rahi|rahe|kahani|batayein|samjhao|kaise\s+ho|kya\s+haal|kya\s+chal|sun\s+rahe\s+ho|sun\s+rahi\s+ho|tum\s+kaun\s+ho|aap\s+kaun\s+hain|tumhara\s+naam|kya\s+naam\s+hai|theek\s+ho|badhiya|accha|achha|batao\s+na|kuch\s+batao|kaisa\s+chal|namashkar)(?:\b|_)/i,
         lang: "hi",
     },
     // Telugish / Telugu keywords

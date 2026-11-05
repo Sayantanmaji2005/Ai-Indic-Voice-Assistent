@@ -3,8 +3,11 @@ import { detectLanguage, languageByCode } from "@/lib/languages";
 import { TavilySearchProvider } from "@/lib/search/providers";
 import { getVoiceAgentForLanguage } from "@/lib/agents/indic-voice-agents";
 
-// Questions or queries that benefit from live web search grounding
-const FACTUAL_SEARCH_INDICATORS = /(?:(?:what|who|where|when|why|how|which|tell me|weather|price|gold|news|stock|match|score|train|flight|history|capital|meaning|recipe)\b)|(?:(?:কি|কী|কে|কোথায়|কখন|কেন|কিভাবে|কত|দাম|আবহাওয়া|খবর|ইতিহাস|রাজধানী)\b)|(?:(?:क्या|कौन|कहाँ|कब|क्यों|कैसे|कितना|भाव|मौसम|समाचार|इतिहास|राजधानी)\b)/i;
+// Casual greetings and identity inquiries that must respond immediately without web search delay
+const CASUAL_OR_IDENTITY_QUERY = /^(?:(?:hello|hi|hey|hallo|namaste|namaskar|kemon\s+acho|kemon\s+achen|kaise\s+ho|kya\s+haal|tumi\s+ke|aap\s+kaun\s+ho|tum\s+kaun\s+ho|who\s+are\s+you|what\s+is\s+your\s+name|apnar\s+naam\s+ki|tomar\s+naam\s+ki|kya\s+naam\s+hai|shunte\s+pachho|sun\s+rahe\s+ho|good\s+morning|good\s+evening|good\s+night|shuvo\s+sokal|suprabhat|thanks|thank\s+you|dhanyawad|dhonnobad|how\s+are\s+you|what\s+can\s+you\s+do|ki\s+korte\s+paro|kya\s+kar\s+sakte\s+ho|bhalo\s+achi|theek\s+hoon|aur\s+batao|bolun|shunun)\b)/i;
+
+// Strict indicators that actually require real-time web grounding
+const REALTIME_SEARCH_INDICATORS = /(?:\b(?:weather|temperature|forecast|score|match|vs|stock|sensex|nifty|gold\s+price|petrol|diesel|breaking\s+news|today's\s+news|latest\s+news|current\s+price|exchange\s+rate|cricket|election|who\s+won|president\s+of|prime\s+minister\s+of)\b)|(?:\b(?:আবহাওয়া|তাপমাত্রা|আজকের\s+খবর|সোনার\s+দাম|বর্তমান\s+প্রধানমন্ত্রী|বর্তমান\s+রাষ্ট্রপতি)\b)|(?:\b(?:मौसम|तापमान|आज\s+की\s+ताज़ा\s+खबर|सोने\s+का\s+भाव|पेट्रोल\s+का\s+दाम|वर्तमान\s+प्रधानमंत्री|वर्तमान\s+राष्ट्रपति)\b)/i;
 
 export async function POST(request) {
     try {
@@ -20,24 +23,27 @@ export async function POST(request) {
         const groqKey = process.env.GROQ_API_KEY;
         const openAiKey = process.env.OPENAI_API_KEY;
 
-        // 1. Precise Language Detection & Dedicated AI Voice Agent Resolution
-        const detectedLang = detectLanguage(message, language);
-        const resolvedLang = (language && language !== "auto") ? language : detectedLang;
-        const langInfo = languageByCode(resolvedLang);
-        const agent = getVoiceAgentForLanguage(resolvedLang);
+        // 1. Precise Initial Language Detection & Dedicated AI Voice Agent Resolution
+        const cleanMsg = message.trim();
+        const detectedLang = detectLanguage(cleanMsg, language);
+        let resolvedLang = (language && language !== "auto") ? language : detectedLang;
+        let langInfo = languageByCode(resolvedLang);
+        let agent = getVoiceAgentForLanguage(resolvedLang);
 
-        // 2. Real-Time Search Grounding via Tavily Search Engine
+        // 2. Real-Time Search Grounding (Only for genuine real-time facts, never for greetings)
         let searchSources = [];
         let sourceContext = "";
 
-        // Check if query seeks real-time / factual information
-        const isFactualQuery = FACTUAL_SEARCH_INDICATORS.test(message) || message.trim().length > 6;
+        const isCasual = CASUAL_OR_IDENTITY_QUERY.test(cleanMsg);
+        const isFactualQuery = !isCasual && REALTIME_SEARCH_INDICATORS.test(cleanMsg);
+
         if (isFactualQuery) {
             try {
-                const searchProvider = new TavilySearchProvider();
-                const searchResult = await searchProvider.searchWithImages(message, "ai");
+                const searchPromise = (new TavilySearchProvider()).searchWithImages(cleanMsg, "ai");
+                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Search timeout")), 1200));
+                const searchResult = await Promise.race([searchPromise, timeoutPromise]);
                 if (searchResult && Array.isArray(searchResult.sources) && searchResult.sources.length > 0) {
-                    searchSources = searchResult.sources.slice(0, 4);
+                    searchSources = searchResult.sources.slice(0, 3);
                     sourceContext = searchSources
                         .map((s, idx) => `[Source ${idx + 1}] (${s.publisher}): ${s.title} - ${s.snippet}`)
                         .join("\n\n");
@@ -52,36 +58,24 @@ export async function POST(request) {
 YOUR ONLY IDENTITY IS INDICA. NEVER CALL YOURSELF ANY OTHER NAME.
 
 ========================================================================
-CONVERSATIONAL & ENERGETIC DELIVERY DIRECTIVES
+HUMAN-LIKE CONVERSATIONAL DIRECTIVES (CRITICAL)
 ========================================================================
-${agent.systemDirectives}
-
-Current Language: ${langInfo.label} (${langInfo.nativeLabel}, code: "${resolvedLang}").
-Voice Engine: Native Indic Neural (${agent.neuralVoice}).
-
-========================================================================
-CRITICAL RULE #1: STRICT & 100% LANGUAGE FIDELITY
-========================================================================
-You MUST respond 100% in ${langInfo.label} (${langInfo.nativeLabel}).
-- If user speaks Bengali, answer 100% in pure natural Bengali.
-- If user speaks Hindi, answer 100% in natural confident Hindi.
-- If user speaks Marathi, answer 100% in pure authentic Marathi.
-- If user speaks English, answer 100% in natural Indian English.
-- Do NOT mix languages.
+- Sound like a real, lively, empathetic human friend speaking directly to the user.
+- Response Length: MAXIMUM 1 TO 2 VIBRANT SPOKEN SENTENCES. Be concise, fast, and conversational.
+- Emotional Intelligence: If the user greets you, greet back warmly with high energy. If they ask a question, give the answer immediately.
+- ABSOLUTELY NO MARKDOWN OR SYMBOLS: Never use asterisks (*, **), hash tags (#), bullet points (-), numbered lists, emojis, brackets ([1]), or links. Speak pure natural prose.
 
 ========================================================================
-CRITICAL RULE #2: SPOKEN CONVERSATIONAL DELIVERY
+AUTHENTIC INDIC LANGUAGE MATCHING (STRICT)
 ========================================================================
-- Sound energetic, intelligent, lively, and warm.
-- Keep replies conversational and direct (typically 2 to 3 spoken sentences).
-- ABSOLUTELY NO MARKDOWN: Never use asterisks (*, **), headers (#), bullet dashes (-), numbered lists, brackets ([1]), or URL links.
-
-${sourceContext ? `========================================================================
-LIVE SEARCH GROUNDING EVIDENCE (REAL-TIME WEB INFORMATION):
-========================================================================
-${sourceContext}
-
-Use the live search facts above to give a 100% accurate, up-to-date answer in ${langInfo.label}.` : ""}`;
+The user is speaking in: ${langInfo.label} (${langInfo.nativeLabel}, code: "${resolvedLang}").
+- If Bengali: Respond 100% in sweet, natural, authentic Bengali (বাংলা).
+- If Hindi: Respond 100% in confident, natural Hindi (हिन्दी).
+- If Marathi: Respond 100% in pure authentic Marathi (मराठी).
+- If Tamil / Telugu / Gujarati / Punjabi / Kannada / Malayalam / Odia: Respond authentically in that tongue.
+- If English: Respond in natural, fluent Indian English.
+Do NOT mix languages or switch to English unless user spoke English.
+${sourceContext ? `\nFACTS FROM REAL-TIME SEARCH:\n${sourceContext}\nUse these facts to answer accurately in 1-2 spoken sentences.` : ""}`;
 
         // Build conversational messages
         const conversationMessages = [
@@ -126,7 +120,7 @@ Use the live search facts above to give a 100% accurate, up-to-date answer in ${
                             model,
                             messages: conversationMessages,
                             temperature: 0.5,
-                            max_tokens: 300,
+                            max_tokens: 140,
                         }),
                     });
 
@@ -157,7 +151,7 @@ Use the live search facts above to give a 100% accurate, up-to-date answer in ${
                         model: process.env.OPENAI_MODEL || "gpt-4o-mini",
                         messages: conversationMessages,
                         temperature: 0.5,
-                        max_tokens: 300,
+                        max_tokens: 140,
                     }),
                 });
 
@@ -181,6 +175,32 @@ Use the live search facts above to give a 100% accurate, up-to-date answer in ${
             .replace(/\[\d+\]/g, "")
             .replace(/\s+/g, " ")
             .trim();
+
+        // 7. Dynamically anchor final language & agent to the actual script of replyText
+        if (/[\u0980-\u09FF]/.test(replyText)) {
+            resolvedLang = "bn";
+        } else if (/[\u0900-\u097F]/.test(replyText)) {
+            if (replyText.includes("आहे") || replyText.includes("नाही") || replyText.includes("काय") || replyText.includes("कसा")) {
+                resolvedLang = "mr";
+            } else {
+                resolvedLang = "hi";
+            }
+        } else if (/[\u0B80-\u0BFF]/.test(replyText)) {
+            resolvedLang = "ta";
+        } else if (/[\u0C00-\u0C7F]/.test(replyText)) {
+            resolvedLang = "te";
+        } else if (/[\u0A80-\u0AFF]/.test(replyText)) {
+            resolvedLang = "gu";
+        } else if (/[\u0C80-\u0CFF]/.test(replyText)) {
+            resolvedLang = "kn";
+        } else if (/[\u0D00-\u0D7F]/.test(replyText)) {
+            resolvedLang = "ml";
+        } else if (/[\u0A00-\u0A7F]/.test(replyText)) {
+            resolvedLang = "pa";
+        } else if (/[\u0B00-\u0B7F]/.test(replyText)) {
+            resolvedLang = "or";
+        }
+        agent = getVoiceAgentForLanguage(resolvedLang);
 
         return NextResponse.json({
             success: true,
