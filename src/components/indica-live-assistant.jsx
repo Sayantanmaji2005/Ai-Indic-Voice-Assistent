@@ -56,6 +56,8 @@ export function IndicaLiveAssistant({
     const liveTextRef = useRef("");
     const detectedLanguageRef = useRef(null);
     const startListeningRef = useRef(null);
+    const idleFollowupTimerRef = useRef(null);
+    const idlePromptCountRef = useRef(0);
 
     useEffect(() => {
         stateRef.current = state;
@@ -304,6 +306,7 @@ export function IndicaLiveAssistant({
                             setTimeout(() => {
                                 if (stateRef.current === "listening" && !isMutedRef.current) {
                                     startListeningRef.current?.();
+                                    scheduleIdleCheck();
                                 }
                             }, 100);
                         } else {
@@ -327,11 +330,49 @@ export function IndicaLiveAssistant({
         fallbackBrowserSpeech(text, lang);
     }, [stopAiSpeech, fallbackBrowserSpeech]);
 
+    // Idle Thoughtful Follow-up: Asks if user has any other query like a real caring human friend
+    const resetIdleTimer = useCallback(() => {
+        if (idleFollowupTimerRef.current) {
+            clearTimeout(idleFollowupTimerRef.current);
+            idleFollowupTimerRef.current = null;
+        }
+    }, []);
+
+    const triggerIdleNudge = useCallback(() => {
+        if (stateRef.current !== "listening" || isMutedRef.current || isProcessingTurnRef.current) return;
+        if (idlePromptCountRef.current >= 2) return;
+        idlePromptCountRef.current += 1;
+
+        const lang = detectedLanguageRef.current || selectedLanguageRef.current || "hi";
+        let idleNudge = "क्या कोई और सवाल है आपका? मैं सुन रही हूँ।";
+        if (lang === "bn") idleNudge = "আর কিছু জানতে চান? আমি শুনছি কিন্তু।";
+        else if (lang === "mr") idleNudge = "अजून काही विचारायचं आहे का? मी ऐकतेय.";
+        else if (lang === "ta") idleNudge = "வேறு ஏதேனும் கேள்வி உள்ளதா? நான் கேட்கிறேன்.";
+        else if (lang === "te") idleNudge = "ఇంకేమైనా తెలుసుకోవాలనుకుంటున్నారా? నేను వింటున్నాను.";
+        else if (lang === "gu") idleNudge = "બીજું કંઈ પૂછવું છે? હું સાંભળી રહી છું.";
+        else if (lang === "en") idleNudge = "Do you have any other questions on your mind? I'm listening.";
+
+        setCurrentAiText(idleNudge);
+        setState("speaking");
+        playAiSpokenResponse(idleNudge, lang);
+    }, [playAiSpokenResponse]);
+
+    const scheduleIdleCheck = useCallback(() => {
+        resetIdleTimer();
+        if (idlePromptCountRef.current < 2) {
+            idleFollowupTimerRef.current = setTimeout(() => {
+                triggerIdleNudge();
+            }, 14000);
+        }
+    }, [resetIdleTimer, triggerIdleNudge]);
+
     // Process user spoken query -> Live AI chat -> Voice playback
     const processUserSpokenTurn = useCallback(async (spokenText) => {
         const text = spokenText?.trim();
         if (!text || isProcessingTurnRef.current) return;
 
+        resetIdleTimer();
+        idlePromptCountRef.current = 0;
         isProcessingTurnRef.current = true;
         setState("thinking");
         setCurrentUserText(text);
@@ -500,6 +541,8 @@ export function IndicaLiveAssistant({
 
                 const liveText = (finalTranscript + interimTranscript).trim();
                 if (liveText) {
+                    resetIdleTimer();
+                    idlePromptCountRef.current = 0;
                     liveTextRef.current = liveText;
                     userSpokeRef.current = true;
                     setCurrentUserText(liveText);
@@ -571,6 +614,7 @@ export function IndicaLiveAssistant({
 
         return () => {
             if (timer) clearTimeout(timer);
+            resetIdleTimer();
             stopAiSpeech();
             if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
             if (recognitionRef.current) {
@@ -675,17 +719,47 @@ export function IndicaLiveAssistant({
     const coreScale = 1 + audioVolume * 0.22;
     const haloSpread = 25 + audioVolume * 45;
 
+    const activeLangCode = detectedLangCode || (selectedLanguage === "auto" ? "hi" : selectedLanguage);
+
     let heroTitle = "Indica is Listening...";
     let heroSubtitle = selectedLanguage === "auto"
         ? "Speak now in Bengali (বাংলা), Hindi (हिन्दी), Marathi or any language — I'm ready."
         : `Speak now in ${activeAgent.language} (${activeAgent.nativeLanguage}) — I'm ready.`;
 
     if (state === "thinking") {
-        heroTitle = "Indica is Thinking...";
-        heroSubtitle = "Formulating a natural, intelligent response...";
+        if (activeLangCode === "bn") {
+            heroTitle = "ইন্ডিকা ভাবছে...";
+            heroSubtitle = "উত্তর তৈরি হচ্ছে... মনে আর কোনো প্রশ্ন আছে কি?";
+        } else if (activeLangCode === "hi") {
+            heroTitle = "इंडिका सोच रही है...";
+            heroSubtitle = "जवाब तैयार हो रहा है... क्या मन में कोई और सवाल है?";
+        } else if (activeLangCode === "mr") {
+            heroTitle = "इंडिका विचार करत आहे...";
+            heroSubtitle = "उत्तर तयार होत आहे... मनात अजून काही प्रश्न आहे का?";
+        } else if (activeLangCode === "ta") {
+            heroTitle = "இண்டிகா யோசிக்கிறது...";
+            heroSubtitle = "பதில் தயாராகிறது... வேறு ஏதேனும் கேள்வி உள்ளதா?";
+        } else if (activeLangCode === "te") {
+            heroTitle = "ఇండికా ఆలోచిస్తోంది...";
+            heroSubtitle = "సమాధానం సిద్ధమవుతోంది... ఇంకా ఏమైనా ప్రశ్న ఉందా?";
+        } else if (activeLangCode === "gu") {
+            heroTitle = "ઇન્ડિકા વિચારી રહી છે...";
+            heroSubtitle = "જવાબ તૈયાર થઈ રહ્યો છે... મનમાં બીજો કોઈ પ્રશ્ન છે?";
+        } else {
+            heroTitle = "Indica is Thinking...";
+            heroSubtitle = "Formulating your answer... any other queries on your mind?";
+        }
     } else if (state === "speaking") {
-        heroTitle = "Indica is Speaking";
-        heroSubtitle = "Tap the glowing circle or speak to interrupt.";
+        if (activeLangCode === "bn") {
+            heroTitle = "ইন্ডিকা উত্তর দিচ্ছে";
+            heroSubtitle = "থামাতে চাইলে বৃত্তে আলতো চাপুন বা কথা বলুন।";
+        } else if (activeLangCode === "hi") {
+            heroTitle = "इंडिका बोल रही है";
+            heroSubtitle = "रोकने के लिए गोले पर टैप करें या बोलना शुरू करें।";
+        } else {
+            heroTitle = "Indica is Speaking";
+            heroSubtitle = "Tap the glowing circle or speak to interrupt.";
+        }
     } else if (isMuted) {
         heroTitle = "Microphone Muted";
         heroSubtitle = "Tap the microphone below to resume conversation.";
