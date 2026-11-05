@@ -4,15 +4,15 @@ import { useEffect, useRef, useState, useCallback } from "react";
 
 // Multi-lingual & phonetic wake patterns for Indica
 const WAKE_PATTERNS = [
-    // English & Spoken Hindi/Bengali Phonetic Variations
-    /(?:\b|^)(?:hey|hay|he|hi|hai|hello|ok|okay|listen|sun|suno|shun|shuno|bolo|bolun|namaste|nomoshkar)?\s*(?:indica|indika|endica|endika|indico|indiga|india|indira|in\s*the\s*car|indicator)(?:\b|$)/i,
+    // English & Spoken Hindi/Bengali Phonetic Variations (e.g. "hay indica", "hey indica", "hi indica", "ok indica", "hey india", etc.)
+    /(?:^|\b)(?:hey|hay|he|hi|hai|hello|hallo|ok|okay|listen|sun|suno|shun|shuno|bolo|bolun|namaste|nomoshkar|ei|oye|ay|ai|are)?\s*(?:indica|indika|endica|endika|indico|indiga|india|indira|in\s*the\s*car|indicator|indeca|endeca)(?:\b|$)/i,
     // Bengali (বাংলা)
-    /(?:\b|^)(?:হে|হাই|হ্যালো|শোনো|শুনুন|বলো|বলুন|নমস্কার)?\s*(?:ইন্ডিকা|ইন্দিকা|ইনডিকা)(?:\b|$)/i,
+    /(?:^|\b)(?:হে|হাই|হ্যালো|শোনো|শুনুন|বলো|বলুন|নমস্কার)?\s*(?:ইন্ডিকা|ইন্দিকা|ইনডিকা)(?:\b|$)/i,
     // Hindi & Marathi (हिन्दी / मराठी)
-    /(?:\b|^)(?:हे|हाय|हेलो|सुनो|सुनिए|बोलो|बोलिए|नमस्ते|नमस्कार)?\s*(?:इंडिका|इन्डिका)(?:\b|$)/i,
+    /(?:^|\b)(?:हे|हाय|हेलो|सुनो|सुनिए|बोलो|बोलिए|नमस्ते|नमस्कार)?\s*(?:इंडिका|इन्डिका)(?:\b|$)/i,
     // Telugu & Tamil
-    /(?:\b|^)(?:హే|నమస్కారం)?\s*ఇండికా(?:\b|$)/i,
-    /(?:\b|^)(?:ஹே|வணக்கம்)?\s*இண்டிகா(?:\b|$)/i,
+    /(?:^|\b)(?:హే|నమస్కారం)?\s*ఇండికా(?:\b|$)/i,
+    /(?:^|\b)(?:ஹே|வணக்கம்)?\s*இண்டிகா(?:\b|$)/i,
 ];
 
 const DIRECT_WAKE_WORDS = [
@@ -22,6 +22,8 @@ const DIRECT_WAKE_WORDS = [
     "endika",
     "indico",
     "indicator",
+    "indeca",
+    "endeca",
     "ইন্ডিকা",
     "ইন্দিকা",
     "ইনডিকা",
@@ -63,27 +65,12 @@ export function useWakeWord({
     const [hasMicPermission, setHasMicPermission] = useState(false);
 
     const recognitionRef = useRef(null);
-    const micStreamRef = useRef(null);
     const restartTimeoutRef = useRef(null);
     const isExplicitlyStoppedRef = useRef(false);
+    const isBlockedByPermissionRef = useRef(false);
     const enabledRef = useRef(enabled);
     const onWakeWordRef = useRef(onWakeWord);
     const isStartingRef = useRef(false);
-
-    useEffect(() => {
-        enabledRef.current = enabled;
-        if (!enabled) {
-            stopWakeWordListener();
-        } else {
-            isExplicitlyStoppedRef.current = false;
-            const t = setTimeout(() => {
-                if (enabledRef.current) {
-                    startWakeWordListener();
-                }
-            }, 300);
-            return () => clearTimeout(t);
-        }
-    }, [enabled]);
 
     useEffect(() => {
         onWakeWordRef.current = onWakeWord;
@@ -91,24 +78,28 @@ export function useWakeWord({
 
     const checkTranscriptForWakeWord = useCallback((transcript) => {
         if (!transcript) return false;
-        console.log("[Indica WakeWord Listener Heard]:", transcript);
-
         const normalized = transcript
             .toLowerCase()
             .replace(/[.,!?;:।]/g, " ")
             .replace(/\s+/g, " ")
             .trim();
 
-        // 1. Regex pattern matching
+        console.log("[Indica WakeWord Heard]:", normalized);
+
+        // 1. Direct includes match (e.g. "hay indica", "hey indica", "indica", etc.)
+        if (DIRECT_WAKE_WORDS.some((w) => normalized.includes(w))) {
+            return true;
+        }
+
+        // 2. Regex pattern matching
         for (const pattern of WAKE_PATTERNS) {
             if (pattern.test(normalized)) {
                 return true;
             }
         }
 
-        // 2. Direct keyword check
-        const words = normalized.split(/\s+/);
-        if (words.some((w) => DIRECT_WAKE_WORDS.includes(w))) {
+        // 3. Indian accent acoustic phonetic variations (e.g. "hey india", "hay indira")
+        if (/(?:hey|hay|hi|hai|hello|oye|ei|sun|suno)\s+(?:india|indira|in\s*the\s*car|integra|indicator)/i.test(normalized)) {
             return true;
         }
 
@@ -131,14 +122,6 @@ export function useWakeWord({
                 // ignore
             }
             recognitionRef.current = null;
-        }
-        if (micStreamRef.current) {
-            try {
-                micStreamRef.current.getTracks().forEach((track) => track.stop());
-            } catch {
-                // ignore
-            }
-            micStreamRef.current = null;
         }
         setIsListeningForWakeWord(false);
         isStartingRef.current = false;
@@ -176,7 +159,9 @@ export function useWakeWord({
 
             recognition.onstart = () => {
                 isStartingRef.current = false;
+                isBlockedByPermissionRef.current = false;
                 setIsListeningForWakeWord(true);
+                setHasMicPermission(true);
                 console.log("[Indica WakeWord Active]: Listening for 'Hay Indica' / 'Hey Indica'...");
             };
 
@@ -206,23 +191,26 @@ export function useWakeWord({
                 }
                 console.warn("[Indica WakeWord Notice]:", event.error);
                 if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+                    isBlockedByPermissionRef.current = true;
                     setIsListeningForWakeWord(false);
                     setHasMicPermission(false);
+                    recognitionRef.current = null;
                 }
             };
 
             recognition.onend = () => {
                 isStartingRef.current = false;
                 setIsListeningForWakeWord(false);
+                recognitionRef.current = null;
 
-                // Seamlessly restart continuous wake-word listening
-                if (enabledRef.current && !isExplicitlyStoppedRef.current) {
+                // Seamlessly restart continuous wake-word listening unless blocked by permission or stopped
+                if (enabledRef.current && !isExplicitlyStoppedRef.current && !isBlockedByPermissionRef.current) {
                     if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
                     restartTimeoutRef.current = setTimeout(() => {
-                        if (enabledRef.current && !isExplicitlyStoppedRef.current) {
+                        if (enabledRef.current && !isExplicitlyStoppedRef.current && !isBlockedByPermissionRef.current) {
                             initSpeechRecognition();
                         }
-                    }, 350);
+                    }, 400);
                 }
             };
 
@@ -231,6 +219,7 @@ export function useWakeWord({
         } catch (err) {
             isStartingRef.current = false;
             setIsListeningForWakeWord(false);
+            recognitionRef.current = null;
             console.warn("SpeechRecognition start notice:", err);
         }
     }, [checkTranscriptForWakeWord, language]);
@@ -240,33 +229,53 @@ export function useWakeWord({
             return;
         }
 
-        // Request user microphone permission if not already acquired
-        if (navigator.mediaDevices?.getUserMedia && !micStreamRef.current) {
+        // Under user interaction or explicit call: request mic permission once to guarantee prompt
+        if (navigator.mediaDevices?.getUserMedia) {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                micStreamRef.current = stream;
+                // Immediately stop stream to release the mic hardware for SpeechRecognition
+                stream.getTracks().forEach((track) => track.stop());
                 setHasMicPermission(true);
+                isBlockedByPermissionRef.current = false;
             } catch (e) {
                 console.warn("Wake word mic permission request notice:", e);
+                // Even if getUserMedia caught an error, SpeechRecognition might still be allowed
             }
         }
 
         initSpeechRecognition();
     }, [initSpeechRecognition]);
 
-    // User gesture handler: Ensure microphone is activated on first user interaction
+    useEffect(() => {
+        enabledRef.current = enabled;
+        if (!enabled) {
+            stopWakeWordListener();
+        } else {
+            isExplicitlyStoppedRef.current = false;
+            isBlockedByPermissionRef.current = false;
+            const t = setTimeout(() => {
+                if (enabledRef.current) {
+                    initSpeechRecognition();
+                }
+            }, 300);
+            return () => clearTimeout(t);
+        }
+    }, [enabled, initSpeechRecognition, stopWakeWordListener]);
+
+    // User gesture handler: Automatically activate microphone on first user interaction if blocked by autoplay
     useEffect(() => {
         if (!enabled) return;
 
         const handleUserGesture = () => {
             if (enabledRef.current && !isListeningForWakeWord && !recognitionRef.current) {
+                isBlockedByPermissionRef.current = false;
                 startWakeWordListener();
             }
         };
 
-        window.addEventListener("click", handleUserGesture, { passive: true });
-        window.addEventListener("touchstart", handleUserGesture, { passive: true });
-        window.addEventListener("keydown", handleUserGesture, { passive: true });
+        window.addEventListener("click", handleUserGesture, { passive: true, once: false });
+        window.addEventListener("touchstart", handleUserGesture, { passive: true, once: false });
+        window.addEventListener("keydown", handleUserGesture, { passive: true, once: false });
 
         return () => {
             window.removeEventListener("click", handleUserGesture);

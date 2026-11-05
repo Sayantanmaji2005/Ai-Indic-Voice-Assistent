@@ -16,13 +16,17 @@ export default function HomePage() {
     const [currentView, setCurrentView] = useState("workspace");
     const [isLiveOpen, setIsLiveOpen] = useState(false);
 
-    // Global "Hey Indica" wake-word activation
+    // Global "Hey Indica" / "Hay Indica" wake-word activation
     const handleWakeWordTrigger = useCallback((transcript) => {
         console.log("Wake word triggered:", transcript);
         setIsLiveOpen(true);
     }, []);
 
-    useWakeWord({
+    const {
+        isListeningForWakeWord,
+        wakeWordDetected,
+        startWakeWordListener,
+    } = useWakeWord({
         enabled: !isLiveOpen, // Pause wake-word listening while live mode is active
         onWakeWord: handleWakeWordTrigger,
     });
@@ -92,6 +96,34 @@ export default function HomePage() {
                         onLaunchLiveAssistant={handleLaunchLiveAssistant}
                     />
                 </>
+            )}
+
+            {/* Floating Wake-Word Status Pill */}
+            {!isLiveOpen && (
+                <div
+                    className="indica-wake-status-badge"
+                    onClick={() => {
+                        if (!isListeningForWakeWord) {
+                            startWakeWordListener();
+                        } else {
+                            handleLaunchLiveAssistant();
+                        }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    title={isListeningForWakeWord ? "Say 'Hay Indica' or click to launch" : "Click to activate microphone wake word"}
+                >
+                    <span className={`wake-dot ${wakeWordDetected ? "triggered" : isListeningForWakeWord ? "active" : "dormant"}`} />
+                    <span className="wake-text">
+                        {wakeWordDetected ? (
+                            "🎯 'Hay Indica' Detected!"
+                        ) : isListeningForWakeWord ? (
+                            "🎙️ Say 'Hay Indica'"
+                        ) : (
+                            "🎙️ Click to enable 'Hay Indica'"
+                        )}
+                    </span>
+                </div>
             )}
         </>
     );

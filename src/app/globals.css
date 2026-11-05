@@ -8907,3 +8907,68 @@ a {
 
 
 
+
+/* Floating Wake-Word Status Indicator */
+.indica-wake-status-badge {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(14px);
+  border: 1.5px solid #b7dfcd;
+  border-radius: 9999px;
+  box-shadow: 0 6px 24px rgba(13, 62, 45, 0.12);
+  font-size: 13px;
+  font-weight: 700;
+  color: #124534;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.indica-wake-status-badge:hover {
+  transform: translateY(-2px);
+  border-color: #21845e;
+  box-shadow: 0 8px 30px rgba(13, 62, 45, 0.2);
+}
+
+.indica-wake-status-badge .wake-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  transition: all 0.2s;
+}
+
+.indica-wake-status-badge .wake-dot.active {
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981;
+  animation: wakePulse 2s infinite;
+}
+
+.indica-wake-status-badge .wake-dot.dormant {
+  background: #f59e0b;
+}
+
+.indica-wake-status-badge .wake-dot.triggered {
+  background: #0284c7;
+  transform: scale(1.4);
+  box-shadow: 0 0 14px #0284c7;
+}
+
+@keyframes wakePulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 9px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
