@@ -1,0 +1,10 @@
+{
+  "java.autobuild.enabled": false,
+  "java.import.maven.enabled": false,
+  "java.import.gradle.enabled": false,
+  "java.project.importOnFirstTimeStartup": "disabled",
+  "files.exclude": {
+    "**/.git": true,
+    "**/.next": false
+  }
+}
