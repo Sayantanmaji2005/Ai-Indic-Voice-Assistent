@@ -405,17 +405,15 @@ JSON SCHEMA (Respond ONLY with valid JSON):
         if (groqKey) {
             const groqModels = isImageUpload
                 ? [
-                    "llama-3.2-11b-vision-preview",
-                    "llama-3.2-90b-vision-preview",
-                    process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
-                ]
-                : [
-                    process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
-                    "llama-3.3-70b-versatile",
-                    "openai/gpt-oss-120b",
-                    "llama-3.1-8b-instant",
+                    process.env.GROQ_MODEL,
                     "qwen/qwen3.8-27b",
-                ];
+                ].filter(Boolean)
+                : [
+                    process.env.GROQ_MODEL,
+                    "qwen/qwen3.8-27b",
+                    "openai/gpt-oss-120b",
+                    "allam-2-7b",
+                ].filter(Boolean);
             for (const model of groqModels) {
                 try {
                     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
