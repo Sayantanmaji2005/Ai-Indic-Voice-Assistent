@@ -1036,16 +1036,5 @@ export function IndicaLandingPage({ onLaunchApp, onLaunchLiveAssistant }) {
           </div>
         </div>
       </footer>
-
-      {/* Floating Corner Quick-Launcher */}
-      <div className="aesthetic-floating-corner-launcher">
-        <button type="button" className="floating-launcher-btn" onClick={() => handleLaunchWithAuth()} title="Talk to Indica Voice Assistant">
-          <div className="floating-mic-circle">
-            <Mic size={15}/>
-            <span className="mic-pulse-ring"/>
-          </div>
-          <span className="launcher-text">Talk to Indica</span>
-        </button>
-      </div>
     </div>);
 }

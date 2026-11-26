@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { Mic } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { SearchWorkspace } from "@/components/search-workspace";
 import { IndicaLandingPage } from "@/components/indica-landing-page";
@@ -98,31 +99,42 @@ export default function HomePage() {
                 </>
             )}
 
-            {/* Floating Wake-Word Status Pill */}
+            {/* Single Unified Floating Voice Assistant Launcher */}
             {!isLiveOpen && (
-                <div
-                    className="indica-wake-status-badge"
-                    onClick={() => {
-                        if (!isListeningForWakeWord) {
-                            startWakeWordListener();
-                        } else {
+                <div className="aesthetic-floating-corner-launcher">
+                    <button
+                        type="button"
+                        className={`floating-launcher-btn ${wakeWordDetected ? "is-triggered" : ""}`}
+                        onClick={() => {
+                            if (!isListeningForWakeWord) {
+                                startWakeWordListener();
+                            }
                             handleLaunchLiveAssistant();
+                        }}
+                        title={
+                            isListeningForWakeWord
+                                ? "Say 'Hay Indica' or click to talk"
+                                : "Click to talk to Indica Voice Assistant"
                         }
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    title={isListeningForWakeWord ? "Say 'Hay Indica' or click to launch" : "Click to activate microphone wake word"}
-                >
-                    <span className={`wake-dot ${wakeWordDetected ? "triggered" : isListeningForWakeWord ? "active" : "dormant"}`} />
-                    <span className="wake-text">
-                        {wakeWordDetected ? (
-                            "🎯 'Hay Indica' Detected!"
-                        ) : isListeningForWakeWord ? (
-                            "🎙️ Say 'Hay Indica'"
-                        ) : (
-                            "🎙️ Click to enable 'Hay Indica'"
-                        )}
-                    </span>
+                    >
+                        <div className="floating-mic-circle">
+                            <Mic size={15} />
+                            <span className={`mic-pulse-ring ${isListeningForWakeWord ? "active" : ""}`} />
+                        </div>
+                        <div className="floating-launcher-content">
+                            <span className="launcher-text">
+                                {wakeWordDetected ? "Launching Indica..." : "Talk to Indica"}
+                            </span>
+                            <span className="launcher-wake-hint">
+                                <span className={`wake-hint-dot ${isListeningForWakeWord ? "online" : "ready"}`} />
+                                {wakeWordDetected
+                                    ? "Wake word detected"
+                                    : isListeningForWakeWord
+                                    ? "Say 'Hay Indica'"
+                                    : "Tap to speak"}
+                            </span>
+                        </div>
+                    </button>
                 </div>
             )}
         </>
