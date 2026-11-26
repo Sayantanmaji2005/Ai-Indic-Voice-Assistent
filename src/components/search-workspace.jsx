@@ -38,6 +38,7 @@ export function SearchWorkspace({ initialQuery = "", initialLanguage = "auto", o
     const [isCloningVoice, setIsCloningVoice] = useState(false);
     // Multimodal File & Photo Attachment State
     const [attachedFile, setAttachedFile] = useState(null);
+    const [showOcrText, setShowOcrText] = useState(false);
     const searchInputRef = useRef(null);
     const contentRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -351,7 +352,7 @@ export function SearchWorkspace({ initialQuery = "", initialLanguage = "auto", o
             {/* Premium Responsive Search Input Box */}
             <form className={`search-box ${isListening ? "listening" : ""} ${attachedFile ? "has-attached" : ""}`} onSubmit={(event) => {
             event.preventDefault();
-            void submitSearch();
+            void submitSearch(query, mode, Boolean(attachedFile));
         }} onPaste={handlePaste}>
               {/* Main Input Row (100% width on Mobile, Flex on Desktop) */}
               <div className="search-input-main-row">
@@ -973,21 +974,105 @@ function ResultPanel({ result, sourceOpen, setSourceOpen, whyOpen, setWhyOpen, i
         {result.images.length > 0 && <VisualGallery images={result.images} query={result.query}/>}
 
         {/* Uploaded File / Image Visual Card */}
-        {result.attachedFile && (<div className="analyzed-attachment-card">
+        {result.attachedFile && (
+          <div className="analyzed-attachment-card">
             <div className="analyzed-attachment-header">
-              <span className="analyzed-badge">
-                {result.attachedFile.type.startsWith("image/") ? (<>
-                    <ImageIcon size={14} className="black-outline-icon"/> Uploaded Photo Analysis
-                  </>) : (<>
-                    <FileText size={14} className="black-outline-icon"/> Uploaded Document Analysis
-                  </>)}
-              </span>
-              <span className="analyzed-filename">{result.attachedFile.name}</span>
+              <div className="analyzed-badge-row">
+                <span className={`analyzed-badge ${result.documentCategory === "medical_report" ? "badge-medical" : ""}`}>
+                  {result.documentCategory === "medical_report" ? (
+                    <>🩺 Medical Lab Report Analysis</>
+                  ) : result.documentCategory === "prescription" ? (
+                    <>💊 Prescription Analysis</>
+                  ) : result.documentCategory === "invoice_bill" ? (
+                    <>🧾 Invoice & Bill Breakdown</>
+                  ) : result.documentCategory === "academic_marksheet" ? (
+                    <>🎓 Academic Marksheet</>
+                  ) : result.attachedFile.type.startsWith("image/") ? (
+                    <><ImageIcon size={14} className="black-outline-icon"/> Uploaded Photo Scan</>
+                  ) : (
+                    <><FileText size={14} className="black-outline-icon"/> Uploaded Document</>
+                  )}
+                </span>
+                <span className="analyzed-filename" title={result.attachedFile.name}>
+                  {result.attachedFile.name}
+                </span>
+              </div>
+
+              {/* Instant Spoken Voice Explanation Playback Button */}
+              {result.spokenExplanation && (
+                <button
+                  type="button"
+                  className={`attachment-listen-btn ${isSpeaking ? "playing" : ""}`}
+                  onClick={() => {
+                    if (isSpeaking) {
+                      stopAudio();
+                    } else {
+                      const textToSpeak = result.spokenExplanation || result.executiveSummary || result.answer;
+                      const targetVoiceId = voiceCloneActive && matchedVoiceProfile ? matchedVoiceProfile.id : undefined;
+                      void speak(textToSpeak, result.language, targetVoiceId, audioSpeed);
+                    }
+                  }}
+                  title={isSpeaking ? "Pause Voice Description" : "Listen to Voice Description of this document"}
+                >
+                  {isSpeaking ? (
+                    <>
+                      <Pause size={13} />
+                      <span>Speaking Report...</span>
+                      <span className="live-audio-mini-pulse" />
+                    </>
+                  ) : (
+                    <>
+                      <Volume2 size={13} />
+                      <span>Listen to Report</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
-            {result.attachedFile.data && result.attachedFile.type.startsWith("image/") && (<div className="analyzed-image-display">
-                <img src={result.attachedFile.data} alt={result.attachedFile.name}/>
-              </div>)}
-          </div>)}
+
+            {/* Image Preview if applicable */}
+            {result.attachedFile.data && result.attachedFile.type.startsWith("image/") && (
+              <div className="analyzed-image-display">
+                <img src={result.attachedFile.data} alt={result.attachedFile.name} />
+              </div>
+            )}
+
+            {/* Extracted OCR Raw Text Accordion */}
+            {result.extractedOcrText && (
+              <div className="analyzed-ocr-accordion">
+                <button
+                  type="button"
+                  className="ocr-toggle-btn"
+                  onClick={() => setShowOcrText(!showOcrText)}
+                  aria-expanded={showOcrText}
+                >
+                  <div className="ocr-toggle-left">
+                    <FileText size={13} />
+                    <span>View Extracted OCR Text ({result.extractedOcrText.length} characters)</span>
+                  </div>
+                  <ChevronDown size={14} className={`ocr-chevron ${showOcrText ? "open" : ""}`} />
+                </button>
+
+                {showOcrText && (
+                  <div className="ocr-text-drawer">
+                    <div className="ocr-drawer-top">
+                      <span className="ocr-source-tag">Source: {result.ocrSource || "OCR Engine"}</span>
+                      <button
+                        type="button"
+                        className="ocr-copy-btn"
+                        onClick={() => handleCopy(result.extractedOcrText)}
+                      >
+                        {copied ? <Check size={12} /> : <Copy size={12} />}
+                        <span>{copied ? "Copied" : "Copy OCR Text"}</span>
+                      </button>
+                    </div>
+                    <pre className="ocr-raw-pre">{result.extractedOcrText}</pre>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Primary AI Synthesized Answer Card */}
         <article className="answer-card">

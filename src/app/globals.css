@@ -1520,7 +1520,7 @@ a {
   color: #dc2626;
 }
 
-/* Visual Attachment Result Card */
+/* Visual Attachment & Medical OCR Result Card */
 .analyzed-attachment-card {
   margin-bottom: 22px;
   background: #ffffff;
@@ -1535,7 +1535,16 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 14px;
+}
+
+.analyzed-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .analyzed-badge {
@@ -1547,16 +1556,71 @@ a {
   color: #126b4d;
   background: #e6f6ee;
   border: 1px solid #cce8da;
-  padding: 4px 11px;
-  border-radius: 7px;
+  padding: 5px 12px;
+  border-radius: 9999px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
+.analyzed-badge.badge-medical {
+  color: #0d9488;
+  background: #f0fdfa;
+  border-color: #99f6e4;
+  box-shadow: 0 0 10px rgba(13, 148, 136, 0.12);
+}
+
 .analyzed-filename {
-  font-size: 12.5px;
+  font-size: 12px;
   color: #6a8277;
   font-weight: 600;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-listen-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #151412;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.attachment-listen-btn:hover {
+  background: #27241f;
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+}
+
+.attachment-listen-btn.playing {
+  background: #0d9488;
+  border-color: #2dd4bf;
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(13, 148, 136, 0.4);
+}
+
+.live-audio-mini-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 8px #ffffff;
+  animation: audioDotPulse 1.2s infinite;
+}
+
+@keyframes audioDotPulse {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  50% { transform: scale(1.4); opacity: 1; }
+  100% { transform: scale(0.8); opacity: 0.8; }
 }
 
 .analyzed-image-display {
@@ -1569,6 +1633,7 @@ a {
   align-items: center;
   justify-content: center;
   border: 1px solid #e1ebe5;
+  margin-bottom: 12px;
 }
 
 .analyzed-image-display img {
@@ -1576,6 +1641,105 @@ a {
   max-height: 440px;
   object-fit: contain;
   display: block;
+}
+
+/* Extracted OCR Raw Text Accordion */
+.analyzed-ocr-accordion {
+  margin-top: 12px;
+  border-top: 1px dashed #d5e4dc;
+  padding-top: 10px;
+}
+
+.ocr-toggle-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #f4f8f6;
+  border: 1px solid #e1eee8;
+  color: #1a4f3b;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ocr-toggle-btn:hover {
+  background: #eaf4ef;
+  border-color: #c9e4d7;
+}
+
+.ocr-toggle-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.ocr-chevron {
+  transition: transform 0.25s ease;
+}
+
+.ocr-chevron.open {
+  transform: rotate(180deg);
+}
+
+.ocr-text-drawer {
+  margin-top: 8px;
+  border-radius: 10px;
+  background: #141311;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 14px;
+  color: #f1f5f9;
+  animation: proFadeInUp 0.3s ease;
+}
+
+.ocr-drawer-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ocr-source-tag {
+  font-size: 11px;
+  color: #94a3b8;
+  font-family: monospace;
+}
+
+.ocr-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 3px 8px;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.ocr-copy-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.ocr-raw-pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 0;
+  padding-right: 4px;
 }
 
 .search-box:hover {

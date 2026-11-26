@@ -1,3 +1,4 @@
+import { extractAttachmentContent } from "@/lib/server/ocr-service";
 import { detectLanguage, languageByCode } from "@/lib/languages";
 const fallbackSources = [
     {
@@ -213,42 +214,71 @@ export class RetrievalFirstAiProvider {
                 .map((s, i) => `[Source ${i + 1}] (${s.id}) Title: ${s.title}\nDomain: ${s.publisher}\nSnippet: ${s.snippet}`)
                 .join("\n\n")
             : "No external web sources needed — direct visual / cognitive analysis mode.";
+        // High-Precision Multi-Tier OCR & Document Intelligence Preprocessing
+        let ocrResult = { extractedText: "", ocrSuccess: false, detectedType: "none", source: "none" };
+        if (file) {
+            try {
+                ocrResult = await extractAttachmentContent(file);
+            } catch (ocrErr) {
+                console.warn("OCR preprocessing error:", ocrErr);
+            }
+        }
+
         const fileDirective = file
-            ? `\n\n🖼️ ULTIMATE CHATGPT-4O GRADE VISUAL & MULTIMODAL INTELLIGENCE DIRECTIVE:
-The user has attached an image or file: "${file.name}" (${file.type}).
-Your mission is to analyze and describe this image with PERCEPTIVE BRILLIANCE, DEEP HUMAN FEELINGS, AND COMPLETE EXHAUSTIVENESS so that NO QUESTION OR CURIOSITY IS LEFT UNANSWERED.
+            ? `\n\n📄 COMPREHENSIVE DOCUMENT, MEDICAL REPORT & OCR INTELLIGENCE DIRECTIVE:
+The user has attached an image or document: "${file.name}" (${file.type}).
+Detected Document Category: ${ocrResult.detectedType.toUpperCase()}
+OCR Extraction Method: ${ocrResult.source}
 
-If an IMAGE/PHOTO is uploaded:
-1. 🌟 **The Big Picture & Emotional Essence (ছবিটির সামগ্রিক দৃশ্য ও মেজাজ / तस्वीर का सार और भाव)**:
-   - What immediately strikes the viewer? What is the atmosphere, mood, emotion, style (e.g. candid smartphone photo, professional DSLR portrait, digital artwork, historical photograph, architectural capture, infographic, technical screenshot)?
-   - Lighting and Color Palette (natural sunlight, golden hour, moody shadows, neon highlights, warm earth tones, cool blues).
+========================================================================
+EXTRACTED DOCUMENT OCR TEXT:
+========================================================================
+${ocrResult.extractedText || "[No legible text detected on document - analyze visual patterns and file metadata]"}
+========================================================================
 
-2. 🎯 **Focal Subject & Core Action (মূল বিষয় ও চরিত্র / मुख्य विषय और क्रियाएँ)**:
-   - Deep-dive into who or what is at the center of the frame.
-   - For People: Facial expressions, emotional state (joy, contemplation, fatigue, excitement), eye gaze direction, body posture, gestures, clothing style, fabrics/textures, and accessories.
-   - For Animals/Objects/Nature: Species/type, physical condition, behavior, position, and texture details.
+CRITICAL DOCUMENT-SPECIFIC INSTRUCTIONS BASED ON TYPE:
 
-3. 🏞️ **Setting, Environment & Background Atmosphere (পরিবেশ ও পটভূমি / पृष्ठभूमि और वातावरण)**:
-   - Analyze the setting: indoor vs outdoor, geographical/cultural clues (Indian street, modern office, village path, mountain horizon), architectural cues, background people, depth-of-field/bokeh.
+1. 🩺 IF MEDICAL / DIAGNOSTIC LAB REPORT OR PRESCRIPTION:
+   - **Document Identification**: State the laboratory / hospital name, doctor name, patient name (if visible), and report date clearly.
+   - **Parameter Analysis**:
+     - Provide a clean, organized table or cards with:
+       • Parameter Name (e.g. Hemoglobin, Fasting Blood Sugar, Serum Creatinine, TSH, Platelet Count)
+       • Observed Value / Patient's Result (with exact units, e.g. 11.2 g/dL, 95 mg/dL)
+       • Biological Reference Range (Normal Range)
+       • Status Badge: 🟢 Normal, 🔴 High, 🟡 Low, or ⚠️ Critical
+   - **Clinical Summary in Plain Words**:
+     - Explain each abnormal or noteworthy parameter in simple, comforting terms without alarming medical jargon.
+     - Tell what a high or low value typically means in everyday terms (e.g., mild anemia, hydration, metabolic health).
+   - **Actionable Steps & Dietary Guidance**:
+     - Practical, wholesome dietary and lifestyle advice (e.g., iron-rich foods, leafy greens, water intake, regular walking).
+     - Recommended questions the patient should ask their consulting doctor.
+   - **Mandatory Medical Disclaimer**:
+     - Always include a prominent, professional safety disclaimer:
+       > ⚠️ **চিকিৎসা পরামর্শ বিজ্ঞপ্তি / स्वास्थ्य अस्वीकरण**: এটি একটি এআই চালিত তথ্যমূলক বিশ্লেষণ। যেকোনো রোগ নির্ণয়, ওষুধ বা চিকিৎসার সিদ্ধান্তের জন্য দয়া করে আপনার রেজিস্টার্ড চিকিৎসক বা স্বাস্থ্যসেবা প্রদানকারীর সাথে পরামর্শ করুন।
 
-4. 🔍 **Micro-Details, Hidden Gems & OCR Text Extraction (নিখুঁত ক্ষুদ্র বিবরণ ও লেখা / सूक्ष्म विवरण और पाठ)**:
-   - Notice the subtle details that 99% of people miss: shadows, reflections in water or glass, stickers, small background objects, watch times, license plates, t-shirt logos, book covers, timestamps.
-   - TRANSCRIBE AND EXPLAIN EVERY VISIBLE PIECE OF TEXT, signboards, labels, handwritten notes, brand names, or numbers with 100% accuracy.
+2. 🧾 IF INVOICE, BILL, SALARY SLIP OR UTILITY RECEIPT:
+   - Extract Vendor Name, Invoice #, Date, GSTIN / Tax ID.
+   - Itemized breakdown of charges, subtotal, applicable taxes (CGST/SGST/IGST), total amount due, payment status, and due date.
 
-5. 💡 **Deeper Meaning, Context & Interpretation (গভীর অর্থ ও তাৎপর্য / गहरा अर्थ और संदर्भ)**:
-   - What story is this photograph telling? What is its cultural, artistic, social, or historical context?
-   - If it's a technical error, homework question, math problem, recipe, or medical label: SOLVE, FIX, OR EXPLAIN IT STEP-BY-STEP COMPLETELY!
+3. 🎓 IF ACADEMIC MARKSHEET, DEGREE OR ADMISSION FORM:
+   - Extract Institution Name, Student Name, Roll / Registration Number, Year, Subject-wise Marks, Total Percentage, and Division/Grade.
 
-6. 🎙️ **Human-Warm Spoken Explanation ("spokenExplanation")**:
-   - The user will LISTEN to your voice explanation through the Indica human voice!
-   - Speak with GENUINE HUMAN FEELINGS, warmth, and intimacy — as if a smart, perceptive friend is sitting right beside them looking at the photo together!
-   - In Bengali: Open with natural warmth: "দেখুন, এই চমৎকার ছবিটা দেখে প্রথমে যা মন ছুঁয়ে যায় তা হলো..." or "ছবিটি খুব খুঁটিয়ে দেখলাম, দারুণ একটি মুহূর্ত..."
-   - In Hindi: Open with natural warmth: "अरे वाह! इस तस्वीर को देखकर सबसे पहले जो चीज़ दिल को छूती है वो है..." or "मैंने इस तस्वीर को बहुत गहराई से देखा, और इसमें..."
-   - In English: Open with: "Looking closely at this image with you, the first thing that really captures my attention is..."
-   - Never say "This image shows", "In this picture we can see", or talk like a robot. Speak with soul, curiosity, and lively human admiration!
+4. 🆔 IF OFFICIAL ID, GOVERNMENT CERTIFICATE OR FORM:
+   - Identify Card Type, Name, ID/Card number (masking sensitive digits if appropriate), and validity status.
 
-If a DOCUMENT / DATA FILE is uploaded:
-- Extract the core thesis, outline the key metrics/findings, analyze code or tables, and provide an exhaustive, actionable breakdown with zero fluff.`
+5. 🖼️ IF GENERAL PHOTO / REAL-WORLD IMAGE:
+   - Analyze subjects, setting, lighting, micro-details, and transcribe any visible signboards, labels, or captions word-for-word.
+
+6. 🎙️ HUMAN-GRADE EMPATHETIC SPOKEN EXPLANATION ("spokenExplanation"):
+   - The user will LISTEN to this spoken explanation in ${resolvedLangInfo.label} (${resolvedLangInfo.nativeLabel})!
+   - Speak in a WARM, REASSURING, GENTLE, AND EMPATHETIC VOICE like a caring, knowledgeable doctor or trusted friend explaining the report clearly.
+   - In Hindi:
+     "नमस्ते! मैंने आपकी मेडिकल रिपोर्ट को बहुत ध्यानपूर्वक देखा है। अच्छी बात यह है कि आपके ज्यादातर टेस्ट जैसे ब्लड शुगर और किडनी मार्कर बिल्कुल सामान्य हैं। हालांकि, आपका हीमोग्लोबिन थोड़ा कम है। कोई चिंता की बात नहीं है, बस अपनी डाइट में थोड़ा सुधार करें और एक बार अपने डॉक्टर से भी सलाह ज़रूर ले लें।"
+   - In Bengali:
+     "নমস্কার! আপনার মেডিকেল রিপোর্টটি আমি খুব খুঁটিয়ে দেখেছি। খুশির খবর হলো আপনার বেশিরভাগ টেস্ট যেমন সুগার এবং ক্রিয়েটিনিন একদম স্বাভাবিক আছে। শুধু হিমোগ্লোবিনের মাত্রা কিছুটা কম রয়েছে। দুশ্চিন্তার কিছু নেই, ভালো পুষ্টিকর খাবার খান এবং নিশ্চিত হতে একবার আপনার ডাক্তারের সাথে পরামর্শ করে নেবেন।"
+   - In English:
+     "Hello! I've thoroughly reviewed your report. The reassuring news is that most of your markers are well within the healthy range. However, your hemoglobin is slightly lower than normal. There's no cause for worry—just maintain a wholesome diet and share these numbers with your doctor."
+   - Keep the spoken explanation soothing, natural (35-75 words), with natural pauses (8-14 words per phrase).`
             : "";
         const targetLangDirective = `PAN-INDIA MULTILINGUAL FIDELITY DIRECTIVE (STRICT SINGLE LANGUAGE ADHERENCE):
 Target Language Mandated: ${resolvedLangInfo.label.toUpperCase()} (${resolvedLangInfo.nativeLabel}, code: "${resolvedLangInfo.code}").
@@ -383,37 +413,26 @@ JSON SCHEMA (Respond ONLY with valid JSON):
         let finalUserPrompt = isAuto
             ? `User Query: "${query}"\nLanguage Preference: Auto Detect (Inspect query, identify language e.g. Bengali/Hindi/English, and reply 100% in that exact language)\n\nSearch Evidence:\n${sourceContext}`
             : `User Query: "${query}"\nSelected Language Preference: ${langInfo.label} (${langInfo.nativeLabel})\n\nSearch Evidence:\n${sourceContext}`;
-        if (file && !file.type.startsWith("image/")) {
-            let docText = "";
-            try {
-                const base64Part = file.data.includes(",") ? file.data.split(",")[1] : file.data;
-                docText = Buffer.from(base64Part, "base64").toString("utf-8");
-            }
-            catch {
-                docText = "[Binary document data]";
-            }
-            finalUserPrompt += `\n\n--- UPLOADED FILE (${file.name}) ---\n${docText.slice(0, 15000)}\n--- END FILE ---`;
+        if (file) {
+            finalUserPrompt += `\n\n--- ATTACHED FILE / OCR TEXT (${file.name}) ---\nType: ${ocrResult.detectedType}\nSource: ${ocrResult.source}\n\n${ocrResult.extractedText || "[Binary or Visual Data]"}\n--- END ATTACHED FILE ---`;
         }
         const isImageUpload = Boolean(file && file.type.startsWith("image/"));
-        const userMessageContent = isImageUpload
+        const openAiUserMessage = isImageUpload
             ? [
                 { type: "text", text: finalUserPrompt },
                 { type: "image_url", image_url: { url: file.data } },
             ]
             : finalUserPrompt;
+        const groqUserMessage = finalUserPrompt;
+
         // 1. Try Groq with available verified high-intelligence models
         if (groqKey) {
-            const groqModels = isImageUpload
-                ? [
-                    process.env.GROQ_MODEL,
-                    "qwen/qwen3.8-27b",
-                ].filter(Boolean)
-                : [
-                    process.env.GROQ_MODEL,
-                    "qwen/qwen3.8-27b",
-                    "openai/gpt-oss-120b",
-                    "allam-2-7b",
-                ].filter(Boolean);
+            const groqModels = [
+                process.env.GROQ_MODEL,
+                "qwen/qwen3.8-27b",
+                "openai/gpt-oss-120b",
+                "allam-2-7b",
+            ].filter(Boolean);
             for (const model of groqModels) {
                 try {
                     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -426,7 +445,7 @@ JSON SCHEMA (Respond ONLY with valid JSON):
                             model,
                             messages: [
                                 { role: "system", content: systemPrompt },
-                                { role: "user", content: userMessageContent },
+                                { role: "user", content: groqUserMessage },
                             ],
                             response_format: { type: "json_object" },
                             temperature: 0.25,
@@ -448,6 +467,9 @@ JSON SCHEMA (Respond ONLY with valid JSON):
                                 related: Array.isArray(parsed.related) ? parsed.related : [],
                                 confidence: "high",
                                 whyThisAnswer: parsed.whyThisAnswer || `Synthesized with Indica Super-Intelligence in ${langInfo.label}.`,
+                                extractedOcrText: ocrResult.extractedText,
+                                documentCategory: ocrResult.detectedType,
+                                ocrSource: ocrResult.source,
                             };
                         }
                     }
@@ -492,6 +514,9 @@ JSON SCHEMA (Respond ONLY with valid JSON):
                             related: Array.isArray(parsed.related) ? parsed.related : [],
                             confidence: "high",
                             whyThisAnswer: parsed.whyThisAnswer || `Synthesized with Indica Super-Intelligence via OpenAI in ${langInfo.label}.`,
+                            extractedOcrText: ocrResult.extractedText,
+                            documentCategory: ocrResult.detectedType,
+                            ocrSource: ocrResult.source,
                         };
                     }
                 }
