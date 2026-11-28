@@ -38,7 +38,6 @@ export function SearchWorkspace({ initialQuery = "", initialLanguage = "auto", o
     const [isCloningVoice, setIsCloningVoice] = useState(false);
     // Multimodal File & Photo Attachment State
     const [attachedFile, setAttachedFile] = useState(null);
-    const [showOcrText, setShowOcrText] = useState(false);
     const searchInputRef = useRef(null);
     const contentRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -460,9 +459,13 @@ export function SearchWorkspace({ initialQuery = "", initialLanguage = "auto", o
           {isLoading && <LoadingAnswer />}
 
           {result && !isLoading && (<ResultPanel result={result} sourceOpen={sourceOpen} setSourceOpen={setSourceOpen} whyOpen={whyOpen} setWhyOpen={setWhyOpen} isSpeaking={isSpeaking} speakAnswer={() => {
-                const textToSpeak = result.spokenExplanation || result.executiveSummary || result.answer;
-                const targetVoiceId = voiceCloneActive && matchedVoiceProfile ? matchedVoiceProfile.id : undefined;
-                void speak(textToSpeak, result.language, targetVoiceId, audioSpeed);
+                if (isSpeaking) {
+                    stopAudio();
+                } else {
+                    const textToSpeak = result.spokenExplanation || result.executiveSummary || result.answer;
+                    const targetVoiceId = voiceCloneActive && matchedVoiceProfile ? matchedVoiceProfile.id : undefined;
+                    void speak(textToSpeak, result.language, targetVoiceId, audioSpeed);
+                }
             }} submitSearch={submitSearch} copied={copied} onCopy={handleCopy} audioSpeed={audioSpeed} setAudioSpeed={(spd) => {
                 setAudioSpeed(spd);
                 setSpeed(spd);
@@ -940,6 +943,7 @@ function VisualGallery({ images, query }) {
 }
 function ResultPanel({ result, sourceOpen, setSourceOpen, whyOpen, setWhyOpen, isSpeaking, speakAnswer, submitSearch, copied, onCopy, audioSpeed, setAudioSpeed, }) {
     const [reasoningOpen, setReasoningOpen] = useState(true);
+    const [showOcrText, setShowOcrText] = useState(false);
     return (<section className="answer-layout">
       <div className="results-main">
         {/* Audio Controller Banner */}
@@ -1003,15 +1007,7 @@ function ResultPanel({ result, sourceOpen, setSourceOpen, whyOpen, setWhyOpen, i
                 <button
                   type="button"
                   className={`attachment-listen-btn ${isSpeaking ? "playing" : ""}`}
-                  onClick={() => {
-                    if (isSpeaking) {
-                      stopAudio();
-                    } else {
-                      const textToSpeak = result.spokenExplanation || result.executiveSummary || result.answer;
-                      const targetVoiceId = voiceCloneActive && matchedVoiceProfile ? matchedVoiceProfile.id : undefined;
-                      void speak(textToSpeak, result.language, targetVoiceId, audioSpeed);
-                    }
-                  }}
+                  onClick={speakAnswer}
                   title={isSpeaking ? "Pause Voice Description" : "Listen to Voice Description of this document"}
                 >
                   {isSpeaking ? (
@@ -1060,7 +1056,7 @@ function ResultPanel({ result, sourceOpen, setSourceOpen, whyOpen, setWhyOpen, i
                       <button
                         type="button"
                         className="ocr-copy-btn"
-                        onClick={() => handleCopy(result.extractedOcrText)}
+                        onClick={() => onCopy(result.extractedOcrText)}
                       >
                         {copied ? <Check size={12} /> : <Copy size={12} />}
                         <span>{copied ? "Copied" : "Copy OCR Text"}</span>
