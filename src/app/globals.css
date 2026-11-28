@@ -9762,3 +9762,198 @@ a {
     font-size: 15px;
   }
 }
+
+/* ==========================================================================
+   REFINED PROFESSIONAL SEARCH WORKSPACE (CLEAN, HUMAN, NON-AI LOOK)
+   ========================================================================== */
+
+.pro-workspace-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 22px;
+  animation: proFadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pro-greeting-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 15px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 14px;
+  backdrop-filter: blur(8px);
+}
+
+.pro-greeting-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
+  animation: livePingDot 2s infinite;
+}
+
+.pro-workspace-title {
+  font-family: "Outfit", "Plus Jakarta Sans", sans-serif;
+  font-size: clamp(34px, 4.4vw, 54px);
+  font-weight: 850;
+  line-height: 1.14;
+  letter-spacing: -0.035em;
+  color: #111827;
+  margin: 0 0 12px 0;
+  text-wrap: balance;
+}
+
+.pro-italic-serif {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-weight: 600;
+  color: #d35b37;
+  letter-spacing: -0.01em;
+}
+
+.pro-workspace-subtitle {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: clamp(14px, 1.4vw, 16.5px);
+  line-height: 1.55;
+  color: #6b7280;
+  max-width: 580px;
+  margin: 0 auto;
+  text-wrap: balance;
+}
+
+/* Refined Suggestions / Quick Inspiration Grid */
+.pro-suggestions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+  max-width: 900px;
+  margin: 24px auto 0 auto;
+  animation: proFadeInUp 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (max-width: 680px) {
+  .pro-suggestions-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+.pro-suggestion-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  backdrop-filter: blur(10px);
+}
+
+.pro-suggestion-card:hover {
+  transform: translateY(-2px);
+  background: #ffffff;
+  border-color: rgba(211, 91, 55, 0.3);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+}
+
+.suggestion-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.pro-suggestion-card:hover .suggestion-icon-wrap {
+  transform: scale(1.08);
+}
+
+.suggestion-icon-wrap.icon-coral {
+  background: rgba(211, 91, 55, 0.12);
+  color: #d35b37;
+}
+
+.suggestion-icon-wrap.icon-emerald {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.suggestion-icon-wrap.icon-amber {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+}
+
+.suggestion-icon-wrap.icon-purple {
+  background: rgba(139, 92, 246, 0.12);
+  color: #7c3aed;
+}
+
+.suggestion-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.suggestion-title {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1f2937;
+  letter-spacing: -0.01em;
+}
+
+.suggestion-desc {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Modern Meta Bar */
+.modern-search-meta {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 11.5px;
+  color: #9ca3af;
+}
+
+.modern-search-meta strong {
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.modern-status-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}

@@ -2,7 +2,45 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Activity, ArrowUpRight, Check, CheckCircle2, AudioWaveform, ChevronDown, ChevronRight, CircleHelp, Compass, Copy, Cpu, ExternalLink, FileText, Globe2, Home, Image as ImageIcon, Languages, Layers, LoaderCircle, Mic, Newspaper, PanelLeftClose, Pause, Play, Plus, Radio, Search, Send, ShieldCheck, SlidersHorizontal, Sparkles, Square, Volume2, X, Zap, } from "lucide-react";
+import {
+    Activity,
+    ArrowUpRight,
+    Check,
+    CheckCircle2,
+    AudioWaveform,
+    ChevronDown,
+    ChevronRight,
+    CircleHelp,
+    Compass,
+    Copy,
+    Cpu,
+    ExternalLink,
+    FileText,
+    Globe2,
+    Home,
+    Image as ImageIcon,
+    Languages,
+    Layers,
+    LoaderCircle,
+    Mic,
+    Newspaper,
+    PanelLeftClose,
+    Pause,
+    Play,
+    Plus,
+    Radio,
+    Search,
+    Send,
+    ShieldCheck,
+    SlidersHorizontal,
+    Sparkles,
+    Square,
+    Volume2,
+    X,
+    Zap,
+    ScanLine,
+    TrendingUp,
+} from "lucide-react";
 import { IndicaApiClient } from "@/lib/api-client";
 import { detectLanguage, languageByCode } from "@/lib/languages";
 import { useAudioPlayer } from "@/hooks/use-audio-player";
@@ -97,6 +135,13 @@ export function SearchWorkspace({ initialQuery = "", initialLanguage = "auto", o
         }
     };
     const { user, addToHistory, history, isAuthenticated, openAuthModal } = useAuth();
+    const timeGreeting = useMemo(() => {
+        const hr = new Date().getHours();
+        if (hr < 12) return "Good morning";
+        if (hr < 17) return "Good afternoon";
+        return "Good evening";
+    }, []);
+    const firstName = user?.name ? user.name.trim().split(" ")[0] : null;
     const { isSpeaking, speak, stopAudio, setSpeed } = useAudioPlayer();
     const selectedLanguage = useMemo(() => languageByCode(language), [language]);
     // Without Google authentication, immediately return home and open auth modal
@@ -257,10 +302,9 @@ export function SearchWorkspace({ initialQuery = "", initialLanguage = "auto", o
                 </button>
                 <BrandMark onReturnHome={handleGoHome}/>
               </div>)}
-            <div className="engine-status-badge">
+            <div className="engine-status-badge modern-status-badge">
               <span className="live-status-ping"/>
-              <Cpu size={14} strokeWidth={1.75} className="black-outline-icon"/>
-              <span>Indica Super-Intelligence 2.0 • Neural Indic Grounding</span>
+              <span>Live Indic Grounding</span>
             </div>
           </div>
 
@@ -286,30 +330,21 @@ export function SearchWorkspace({ initialQuery = "", initialLanguage = "auto", o
         {/* Content Body */}
         <div ref={contentRef} className={`content ${result ? "has-results" : ""}`}>
           <section className="search-stage">
-            {!result && (<div className="hero-status-row">
-                <div className="eyebrow">
-                  <Sparkles size={13} strokeWidth={1.75} className="black-outline-icon"/>
-                  <span>Built for 1.4 Billion Voices • 13+ Languages</span>
-                </div>
-                <div className="voice-support-badge">
-                  <Volume2 size={13} strokeWidth={1.75} className="black-outline-icon"/>
-                  <span>ElevenLabs Multilingual Voice Active</span>
-                </div>
-              </div>)}
-
             <div className={`headline-block ${!result ? "hero-centered" : ""}`}>
-              {!result ? (<>
-                  <h1 className="hero-display-title">
-                    <span className="hero-title-line-1">Every Voice Has a Question.</span>
-                    <span className="hero-title-line-2">
-                      <span className="hero-brand-accent">INDICA</span> Has the <span className="hero-answer-accent">Answer.</span>
-                    </span>
+              {!result ? (
+                <div className="pro-workspace-hero">
+                  <div className="pro-greeting-pill">
+                    <span className="pro-greeting-dot" />
+                    <span>{firstName ? `${timeGreeting}, ${firstName}` : "Welcome to Indica"}</span>
+                  </div>
+                  <h1 className="pro-workspace-title">
+                    Where knowledge begins, <span className="pro-italic-serif">in your voice.</span>
                   </h1>
-                  <p className="hero-description">
-                    Ask naturally in any Indian language. Indica retrieves live multi-engine evidence, synthesizes verified
-                    facts, and speaks back in a natural Indian voice.
+                  <p className="pro-workspace-subtitle">
+                    Ask naturally in any Indian language, attach medical reports or resumes, and converse hands-free.
                   </p>
-                </>) : (<div className="result-header-block">
+                </div>
+              ) : (<div className="result-header-block">
                   <div className="result-meta-row">
                     <span className="result-kicker">Verified Inquiry</span>
                     <span className="result-lang-tag">
@@ -412,17 +447,93 @@ export function SearchWorkspace({ initialQuery = "", initialLanguage = "auto", o
               </div>
             </form>
 
-            <div className="search-meta">
+            {/* Clean Interactive Suggestions Grid (Eliminates Empty Boring Workspace) */}
+            {!result && !isLoading && (
+              <div className="pro-suggestions-grid">
+                <button
+                  type="button"
+                  className="pro-suggestion-card"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <div className="suggestion-icon-wrap icon-coral">
+                    <ScanLine size={16} strokeWidth={2} />
+                  </div>
+                  <div className="suggestion-text">
+                    <span className="suggestion-title">Document & Medical Vision</span>
+                    <span className="suggestion-desc">Upload report, resume, or bill for voice explanation</span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  className="pro-suggestion-card"
+                  onClick={() => {
+                    const q = "आज 24 कैरेट सोने का भाव और बाजार की स्थिति क्या है?";
+                    setLanguage("hi");
+                    setQuery(q);
+                    void submitSearch(q, mode, false, "hi");
+                  }}
+                >
+                  <div className="suggestion-icon-wrap icon-emerald">
+                    <TrendingUp size={16} strokeWidth={2} />
+                  </div>
+                  <div className="suggestion-text">
+                    <span className="suggestion-title">Gold & Market Rates (हिन्दी)</span>
+                    <span className="suggestion-desc">Live 24K gold rates and Sensex market updates</span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  className="pro-suggestion-card"
+                  onClick={() => {
+                    const q = "কলকাতার বর্তমান প্রধান খবর এবং আবহাওয়া বলো";
+                    setLanguage("bn");
+                    setQuery(q);
+                    void submitSearch(q, mode, false, "bn");
+                  }}
+                >
+                  <div className="suggestion-icon-wrap icon-amber">
+                    <Languages size={16} strokeWidth={2} />
+                  </div>
+                  <div className="suggestion-text">
+                    <span className="suggestion-title">Regional News (বাংলা)</span>
+                    <span className="suggestion-desc">কলকাতার বর্তমান প্রধান খবর ও ট্রাফিক বিশ্লেষণ</span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  className="pro-suggestion-card"
+                  onClick={() => {
+                    const q = "Plan a productive workday around today's commute and meetings";
+                    setLanguage("auto");
+                    setQuery(q);
+                    void submitSearch(q, mode, false, "auto");
+                  }}
+                >
+                  <div className="suggestion-icon-wrap icon-purple">
+                    <Compass size={16} strokeWidth={2} />
+                  </div>
+                  <div className="suggestion-text">
+                    <span className="suggestion-title">Daily Plan & Commute</span>
+                    <span className="suggestion-desc">Optimize transit schedule and afternoon priorities</span>
+                  </div>
+                </button>
+              </div>
+            )}
+
+            <div className="search-meta modern-search-meta">
               <span className="meta-item">
-                <Languages size={13} strokeWidth={1.75} className="black-outline-icon"/> {selectedLanguage.code === "auto" ? "Auto-Detect (Multilingual)" : `${selectedLanguage.nativeLabel} (${selectedLanguage.label})`}
+                <Languages size={13} strokeWidth={1.75} className="black-outline-icon"/> {selectedLanguage.code === "auto" ? "Auto-Detecting 13+ Languages" : `${selectedLanguage.nativeLabel} (${selectedLanguage.label})`}
               </span>
               <span className="meta-separator">•</span>
               <span className="meta-item">
-                <ShieldCheck size={13} strokeWidth={1.75} className="black-outline-icon"/> Verified Multi-Engine Citations
+                <span>Press <strong>Enter ↵</strong> to search</span>
               </span>
               <span className="meta-separator">•</span>
               <span className="meta-item">
-                <Cpu size={13} strokeWidth={1.75} className="black-outline-icon"/> Groq Llama 3.3 70B & GPT-OSS
+                <span>Drop or paste files to analyze</span>
               </span>
               {isListening && (<span className="recording-label">
                   <span className="recording-pulse-dot"/> Listening… speak naturally in your Indian language
@@ -436,10 +547,10 @@ export function SearchWorkspace({ initialQuery = "", initialLanguage = "auto", o
                     <AudioWaveform size={13} strokeWidth={1.75} className="black-outline-icon"/>
                     <span>
                       {isCloningVoice
-                ? "Analyzing Acoustic DNA & Timbre…"
+                ? "Analyzing Acoustic DNA…"
                 : matchedVoiceProfile
-                    ? `Voice Matched: ${matchedVoiceProfile.name} (${Math.round((matchedVoiceProfile.similarityScore || 0.95) * 100)}% match)`
-                    : "Voice Clone Active: Speak to match voice"}
+                    ? `Voice: ${matchedVoiceProfile.name}`
+                    : "Voice Clone Active"}
                     </span>
                   </span>
                 </>)}
