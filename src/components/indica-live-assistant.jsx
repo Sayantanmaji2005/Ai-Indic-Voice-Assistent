@@ -547,11 +547,11 @@ export function IndicaLiveAssistant({
                     userSpokeRef.current = true;
                     setCurrentUserText(liveText);
 
-                    // Rapid, natural turn-taking (like real human conversation):
-                    // When sentence receives isFinal: 650ms (quick response)
-                    // While interim words are still streaming: 1050ms
+                    // Natural human turn-taking:
+                    // Allow ample breathing room for user to pause, think, and complete their sentence.
                     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-                    const pauseThreshold = hasFinal ? 650 : 1050;
+                    const wordCount = liveText.trim().split(/\s+/).length;
+                    const pauseThreshold = wordCount <= 3 ? 2800 : (hasFinal ? 2000 : 3000);
 
                     silenceTimerRef.current = setTimeout(() => {
                         if (stateRef.current === "listening" && liveText.length > 0) {

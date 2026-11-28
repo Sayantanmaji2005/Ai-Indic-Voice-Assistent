@@ -104,22 +104,32 @@ export function useSpeechRecognition({ language, onSpeechResult, onSpeechEnd, on
                             interim += item[0].transcript;
                         }
                     }
-                    const currentText = (final.trim() || interim.trim() || event.results[0]?.[0]?.transcript || "").trim();
+                    const currentText = (final.trim() + (interim ? " " + interim.trim() : "")).trim() || event.results[0]?.[0]?.transcript || "";
                     if (currentText) {
                         transcriptRef.current = currentText;
                         onSpeechResult?.(currentText, Boolean(final));
-                        // ChatGPT / Gemini Voice style turn-taking:
-                        // If sentence finalized, respond snappily in 1.5s; if still producing words, keep listening
-                        const silenceWindow = Boolean(final) ? 1500 : 2600;
+                        // Natural human turn-taking:
+                        // Allow 3.5s after a complete clause, or 5s while thinking/pausing mid-thought
+                        const silenceWindow = Boolean(final) ? 3500 : 5000;
                         resetSilenceTimer(silenceWindow);
                     }
                 };
-                recognition.onerror = () => {
-                    console.warn("Browser SpeechRecognition notice");
+                recognition.onerror = (err) => {
+                    if (err?.error === "no-speech" || err?.error === "aborted") return;
+                    console.warn("Browser SpeechRecognition notice:", err?.error);
                 };
                 recognition.onend = () => {
                     if (!isStoppingRef.current) {
-                        handleFinishListening();
+                        // Seamlessly keep listening unless user explicitly stopped or silence timer expired
+                        try {
+                            recognition.start();
+                        } catch {
+                            setTimeout(() => {
+                                if (!isStoppingRef.current && recognitionRef.current) {
+                                    try { recognitionRef.current.start(); } catch {}
+                                }
+                            }, 250);
+                        }
                     }
                 };
                 recognitionRef.current = recognition;
@@ -134,7 +144,7 @@ export function useSpeechRecognition({ language, onSpeechResult, onSpeechEnd, on
             return;
         }
         setIsListening(true);
-        resetSilenceTimer(7000); // 7s initial allowance to start speaking
+        resetSilenceTimer(12000); // 12s generous initial window to start speaking without being rushed
     }
     async function handleFinishListening() {
         if (isStoppingRef.current)
