@@ -982,8 +982,10 @@ function ResultPanel({ result, sourceOpen, setSourceOpen, whyOpen, setWhyOpen, i
           <div className="analyzed-attachment-card">
             <div className="analyzed-attachment-header">
               <div className="analyzed-badge-row">
-                <span className={`analyzed-badge ${result.documentCategory === "medical_report" ? "badge-medical" : ""}`}>
-                  {result.documentCategory === "medical_report" ? (
+                <span className={`analyzed-badge ${result.documentCategory === "resume_cv" ? "badge-resume" : result.documentCategory === "medical_report" ? "badge-medical" : ""}`}>
+                  {result.documentCategory === "resume_cv" ? (
+                    <>💼 Resume & Career Analysis</>
+                  ) : result.documentCategory === "medical_report" ? (
                     <>🩺 Medical Lab Report Analysis</>
                   ) : result.documentCategory === "prescription" ? (
                     <>💊 Prescription Analysis</>

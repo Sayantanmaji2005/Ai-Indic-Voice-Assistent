@@ -238,7 +238,22 @@ ${ocrResult.extractedText || "[No legible text detected on document - analyze vi
 
 CRITICAL DOCUMENT-SPECIFIC INSTRUCTIONS BASED ON TYPE:
 
-1. 🩺 IF MEDICAL / DIAGNOSTIC LAB REPORT OR PRESCRIPTION:
+1. 💼 IF RESUME / CV / CURRICULUM VITAE / BIO-DATA / CAREER PROFILE:
+   - **Candidate Overview**: Full Name, Current Designation / Target Role, Location, Education Level, and Total Experience.
+   - **Professional Summary**: Core domain expertise, high-impact technical stack, and industry background.
+   - **Technical & Professional Skills Matrix**: Group skills cleanly (e.g. Languages, Frameworks, Cloud, Databases, Tools).
+   - **Work History & Projects Review**: Evaluate major projects, responsibilities, practical outcomes, and problem-solving.
+   - **Actionable Career & ATS Optimization Suggestions**:
+     • Key Strengths (What makes this candidate stand out).
+     • Concrete Recommendations to Boost Recruiter Attention (Adding quantifiable metrics like % growth/time saved, strong action verbs, ATS keyword alignment).
+     • Recommended Job Roles / Career Pathways matching their skillset.
+   - **Empathetic Human Spoken Review ("spokenExplanation")**:
+     • Speak with warmth, encouragement, and high intellect like an experienced senior mentor or tech lead reviewing their resume.
+     • In Bengali: "নমস্কার! আপনার রিজিউমটি আমি খুব যত্ন সহকারে পর্যালোচনা করেছি। আপনার শিক্ষাগত যোগ্যতা, প্রযুক্তিগত দক্ষতা এবং প্রজেক্টের অভিজ্ঞতা সত্যিই প্রশংসনীয়। আপনার প্রোফাইলকে আরও আকর্ষণীয় ও নিখুঁত করতে কিছু দরকারী টিপস নিচে যুক্ত করেছি। আপনি কি নির্দিষ্ট কোনো জবের জন্য প্রস্তুতি নিচ্ছেন?"
+     • In Hindi: "नमस्ते! मैंने आपका रिज़्यूमे बहुत ध्यान से देखा है। आपकी प्रोफाइल बहुत इम्प्रेसिव है, खासकर आपके प्रोजेक्ट्स और टेक्निकल स्किल्स। इसमें आपकी एजुकेशन और वर्क एक्सपीरियंस को काफी अच्छे ढंग से प्रस्तुत किया गया है। रिज़्यूमे को और भी बेहतरीन बनाने और रिक्रूटर्स की नज़र में लाने के लिए कुछ महत्वपूर्ण सुझाव मैंने नीचे लिखे हैं। क्या आप किसी खास जॉब रोल के इंटरव्यू के लिए तैयारी कर रहे हैं?"
+     • In English: "Hello! I've thoroughly reviewed your resume. You have a very solid profile with strong technical skills and well-articulated projects. I have highlighted your key strengths below along with actionable recommendations to help your resume easily pass ATS filters and impress hiring managers. Feel free to ask if you'd like guidance for any specific role!"
+
+2. 🩺 IF MEDICAL / DIAGNOSTIC LAB REPORT OR PRESCRIPTION:
    - **Document Identification**: State the laboratory / hospital name, doctor name, patient name (if visible), and report date clearly.
    - **Parameter Analysis**:
      - Provide a clean, organized table or cards with:
@@ -597,7 +612,19 @@ function localAnswer(query, language, sources, preferredLanguage = "auto", ocrRe
         let spoken = "";
 
         const sampleBlock = textSample ? "\n\n```text\n" + textSample + "\n```\n\n" : "\n\n";
-        if (docType === "medical_report") {
+        if (docType === "resume_cv") {
+            answer = isBn
+                ? "### 💼 রিজিউম ও বায়োডাটা বিশ্লেষণ (" + file.name + ")\n\nআপনার সংযুক্ত রিজিউমটি সফলভাবে বিশ্লেষণ করা হয়েছে।" + sampleBlock + "#### 🌟 মূল যোগ্যতা ও কেরিয়ার পরামর্শ:\n- আপনার প্রোফাইলের বিস্তারিত তথ্য ও প্রযুক্তিগত দক্ষতা চিহ্নিত করা হয়েছে।\n- রিক্রুটারদের কাছে রিজিউমটিকে আরও কার্যকর করতে পরিমাপযোগ্য ফলাফল (metrics) এবং অ্যাকশন ভার্ব যুক্ত করুন।"
+                : isHi
+                ? "### 💼 रिज़्यूमे एवं करियर विश्लेषण (" + file.name + ")\n\nआपके संलग्न रिज़्यूमे का सफलतापूर्वक विश्लेषण किया गया है।" + sampleBlock + "#### 🌟 मुख्य योग्यताएँ एवं करियर सुझाव:\n- आपकी प्रोफाइल की प्रमुख विशेषताएँ और टेक्निकल स्किल्स दर्ज कर ली गई हैं।\n- रिज़्यूमे को अधिक प्रभावशाली बनाने के लिए प्रोजेक्ट्स में मापने योग्य परिणाम (metrics) जोड़ें।"
+                : "### 💼 Resume & Career Analysis (" + file.name + ")\n\nYour uploaded resume has been analyzed." + sampleBlock + "#### 🌟 Key Profile Highlights & Career Guidance:\n- Profile credentials and core skills have been indexed.\n- Consider adding quantifiable impact metrics and action verbs for maximum recruiter impact.";
+
+            spoken = isBn
+                ? "নমস্কার! আপনার রিজিউমটি আমি খুব ভালো করে দেখেছি। আপনার শিক্ষাগত যোগ্যতা ও প্রজেক্টের অভিজ্ঞতা সত্যিই দারুণ। ক্যারিয়ার আরও সমৃদ্ধ করতে কিছু দরকারি পরামর্শ নিচে সাজিয়ে দিয়েছি।"
+                : isHi
+                ? "नमस्ते! मैंने आपका रिज़्यूमे बहुत ध्यानपूर्वक देखा है। आपकी स्किल्स और प्रोजेक्ट्स काफी अच्छे हैं। प्रोफाइल को और बेहतर बनाने के कुछ उपयोगी सुझाव मैंने नीचे लिखे हैं।"
+                : "Hello! I have reviewed your resume. You have strong credentials and impressive project experience. Some career tips and highlights are detailed below.";
+        } else if (docType === "medical_report") {
             answer = isBn
                 ? "### 🩺 মেডিকেল ল্যাব রিপোর্ট বিশ্লেষণ (" + file.name + ")\n\nআপনার সংযুক্ত মেডিকেল রিপোর্টটি সফলভাবে বিশ্লেষণ করা হয়েছে।" + sampleBlock + "> ⚠️ **চিকিৎসা পরামর্শ বিজ্ঞপ্তি**: এটি একটি এআই পরিচালিত তথ্যমূলক বিশ্লেষণ। যেকোনো ওষুধ, রোগ নির্ণয় বা চিকিৎসার সিদ্ধান্তের জন্য দয়া করে আপনার নিবন্ধিত চিকিৎসকের সাথে পরামর্শ করুন।"
                 : isHi

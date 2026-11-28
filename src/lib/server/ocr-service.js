@@ -171,103 +171,76 @@ async function callOcrEngine(base64Data, fileType = "image/png") {
 export function classifyDocumentType(text, fileName = "") {
     const lower = `${fileName} ${text}`.toLowerCase();
 
-    // Medical / Diagnostic Lab Report
-    if (
-        lower.includes("hemoglobin") ||
-        lower.includes("haemoglobin") ||
-        lower.includes("platelet") ||
-        lower.includes("wbc") ||
-        lower.includes("rbc") ||
-        lower.includes("glucose") ||
-        lower.includes("cholesterol") ||
-        lower.includes("creatinine") ||
-        lower.includes("bilirubin") ||
-        lower.includes("thyroid") ||
-        lower.includes("tsh") ||
-        lower.includes("hba1c") ||
-        lower.includes("urine test") ||
-        lower.includes("reference range") ||
-        lower.includes("pathology") ||
-        lower.includes("blood test") ||
-        lower.includes("mg/dl") ||
-        lower.includes("g/dl") ||
-        lower.includes("serum") ||
-        lower.includes("diagnostic") ||
-        lower.includes("dr lal") ||
-        lower.includes("apollo") ||
-        lower.includes("srl") ||
-        lower.includes("thyrocare") ||
-        lower.includes("patient name") ||
-        lower.includes("ref by") ||
-        lower.includes("lab report")
-    ) {
-        return "medical_report";
+    // 1. Check for Resume / CV / Curriculum Vitae / Portfolio FIRST (Highest Priority)
+    const isResumeFile = /(?:resume|cv|curriculum[_s-]?vitae|biodata|bio[_s-]?data|portfolio)/i.test(fileName);
+    const resumePatterns = [
+        /\b(?:curriculum\s+vitae|resume|biodata|bio-data)\b/i,
+        /\b(?:education|academic\s+background|qualifications)\b/i,
+        /\b(?:work\s+experience|professional\s+experience|employment\s+history|internship)\b/i,
+        /\b(?:technical\s+skills|core\s+competencies|key\s+skills|skill\s+set|technologies)\b/i,
+        /\b(?:projects|personal\s+projects|academic\s+projects)\b/i,
+        /\b(?:github\.com|linkedin\.com)\b/i,
+        /\b(?:b\.tech|m\.tech|bca|mca|b\.sc|m\.sc|bachelor|master|diploma)\b/i,
+        /\b(?:certifications|achievements|hobbies|extracurricular)\b/i
+    ];
+    let resumeScore = isResumeFile ? 2 : 0;
+    for (const p of resumePatterns) {
+        if (p.test(lower)) resumeScore++;
+    }
+    if (resumeScore >= 2) {
+        return "resume_cv";
     }
 
-    // Doctor's Prescription
+    // 2. Doctor's Prescription (Requires explicit clinical prescription terms)
     if (
-        lower.includes("rx") ||
-        lower.includes("tablet") ||
-        lower.includes("capsule") ||
-        lower.includes("mg tab") ||
-        lower.includes("1-0-1") ||
-        lower.includes("1-0-0") ||
-        lower.includes("0-0-1") ||
-        lower.includes("after food") ||
-        lower.includes("before food") ||
-        lower.includes("dosage") ||
-        lower.includes("prescription")
+        /\b(?:prescription|rx|tablet|tablets|capsule|capsules|syrup|dosage|1-0-1|1-0-0|0-0-1|after\s+food|before\s+food|mg\s+tab)\b/i.test(lower) &&
+        /\b(?:dr\.|doctor|m\.d\.|mbbs|clinic|patient)\b/i.test(lower)
     ) {
         return "prescription";
     }
 
-    // Financial / Invoice / Bill
-    if (
-        lower.includes("invoice") ||
-        lower.includes("bill to") ||
-        lower.includes("tax invoice") ||
-        lower.includes("gstin") ||
-        lower.includes("cgst") ||
-        lower.includes("sgst") ||
-        lower.includes("igst") ||
-        lower.includes("amount due") ||
-        lower.includes("total amount") ||
-        lower.includes("subtotal") ||
-        lower.includes("electricity bill") ||
-        lower.includes("salary slip") ||
-        lower.includes("pay slip")
-    ) {
+    // 3. Financial / Invoice / Bill
+    const invoicePatterns = [
+        /\b(?:invoice|tax\s+invoice|bill\s+to|gstin|cgst|sgst|igst|subtotal|amount\s+due|total\s+amount|electricity\s+bill|salary\s+slip|pay\s+slip)\b/i
+    ];
+    if (invoicePatterns.some(p => p.test(lower))) {
         return "invoice_bill";
     }
 
-    // Academic / Marksheet
-    if (
-        lower.includes("marksheet") ||
-        lower.includes("grade sheet") ||
-        lower.includes("roll no") ||
-        lower.includes("registration no") ||
-        lower.includes("examination") ||
-        lower.includes("board of secondary") ||
-        lower.includes("marks obtained") ||
-        lower.includes("percentage") ||
-        lower.includes("university") ||
-        lower.includes("cbse") ||
-        lower.includes("icse")
-    ) {
+    // 4. Academic Marksheet / Certificate
+    const marksheetPatterns = [
+        /\b(?:marksheet|mark\s+sheet|grade\s+sheet|roll\s+no|registration\s+no|board\s+of\s+secondary|marks\s+obtained|cbse|icse|university\s+examination)\b/i
+    ];
+    if (marksheetPatterns.some(p => p.test(lower))) {
         return "academic_marksheet";
     }
 
-    // Identity / Official Card
-    if (
-        lower.includes("aadhaar") ||
-        lower.includes("pan card") ||
-        lower.includes("income tax department") ||
-        lower.includes("election commission") ||
-        lower.includes("driving licence") ||
-        lower.includes("passport") ||
-        lower.includes("government of india")
-    ) {
+    // 5. Official ID / Government Document
+    const idPatterns = [
+        /\b(?:aadhaar|pan\s+card|income\s+tax\s+department|election\s+commission|driving\s+licence|passport|government\s+of\s+india)\b/i
+    ];
+    if (idPatterns.some(p => p.test(lower))) {
         return "id_document";
+    }
+
+    // 6. Medical Lab Report (Requires at least 2 distinct unambiguous clinical indicators)
+    const medicalStrictPatterns = [
+        /\b(?:hemoglobin|haemoglobin)\b/i,
+        /\b(?:platelet\s+count|total\s+wbc|total\s+rbc|leukocyte)\b/i,
+        /\b(?:blood\s+glucose|fasting\s+sugar|post\s+prandial|hba1c)\b/i,
+        /\b(?:serum\s+creatinine|blood\s+urea|serum\s+bilirubin|sgpt|sgot|lipid\s+profile)\b/i,
+        /\b(?:thyroid|tsh|t3|t4)\b/i,
+        /\b(?:biological\s+reference\s+range|reference\s+interval|normal\s+range)\b/i,
+        /\b(?:urine\s+routine|pathology\s+lab|diagnostic\s+centre|laboratory\s+report)\b/i,
+        /\b(?:patient\s+name|sample\s+collected|dr\s+lal\s+pathlabs|thyrocare|metropolis)\b/i,
+        /\b(?:apollo\s+(?:hospital|clinic|pharmacy|diagnostics))\b/i
+    ];
+    let medScore = 0;
+    for (const p of medicalStrictPatterns) {
+        if (p.test(lower)) medScore++;
+    }
+    if (medScore >= 2 || (medScore >= 1 && /(?:cbc|blood\s+test|lab\s+report|pathology)/i.test(fileName))) {
+        return "medical_report";
     }
 
     return "general_document";
