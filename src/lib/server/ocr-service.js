@@ -1,17 +1,19 @@
 import zlib from "zlib";
+import Tesseract from "tesseract.js";
 
 /**
- * High-Precision OCR & Document Extraction Service for Indica AI
+ * High-Precision Multi-Tier OCR & Document Intelligence Service for Indica AI
  * - Tier 1: Instant Native PDF text stream decompression & extraction (100% offline, 5ms)
- * - Tier 2: OCR.space Engine with Table Recognition, Auto-Orientation & Multi-Language parsing
- * - Tier 3: Direct UTF-8 Buffer decoding for text, code, CSV, JSON, MD
+ * - Tier 2: Local Tesseract.js Neural Engine (100% offline, zero API keys, zero rate limits)
+ * - Tier 3: OCR.space Engine with Table Recognition as secondary web fallback
+ * - Tier 4: Direct UTF-8 Buffer decoding for text, code, CSV, JSON, MD
  */
 
 const OCR_SPACE_API = "https://api.ocr.space/parse/image";
 const OCR_KEYS = [
     process.env.OCR_SPACE_API_KEY,
-    "helloworld",
     "K88725838488957",
+    "helloworld",
 ].filter(Boolean);
 
 /**
@@ -91,10 +93,25 @@ function cleanPdfString(str) {
 }
 
 /**
- * Sends image or scanned document base64 data to OCR.space engine with table recognition.
- * @param {string} base64Data - Data URL or raw base64 string
- * @param {string} fileType - MIME type
- * @returns {Promise<string>} - Extracted OCR text
+ * Runs local Tesseract OCR on image buffer
+ * @param {Buffer} imageBuffer
+ * @returns {Promise<string>}
+ */
+async function runLocalTesseractOcr(imageBuffer) {
+    try {
+        const result = await Tesseract.recognize(imageBuffer, "eng", {
+            errorHandler: (e) => console.warn("Tesseract notice:", e),
+        });
+        const text = result?.data?.text?.trim() || "";
+        return text;
+    } catch (tessErr) {
+        console.warn("Local Tesseract recognition notice:", tessErr);
+        return "";
+    }
+}
+
+/**
+ * Secondary web OCR fallback via OCR.space
  */
 async function callOcrEngine(base64Data, fileType = "image/png") {
     const formattedData = base64Data.startsWith("data:")
@@ -109,10 +126,10 @@ async function callOcrEngine(base64Data, fileType = "image/png") {
             formData.append("isTable", "true");
             formData.append("scale", "true");
             formData.append("detectOrientation", "true");
-            formData.append("OCREngine", "2"); // Engine 2 is optimized for multi-script Asian & Latin text
+            formData.append("OCREngine", "2");
 
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 12000);
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
 
             const response = await fetch(OCR_SPACE_API, {
                 method: "POST",
@@ -122,30 +139,23 @@ async function callOcrEngine(base64Data, fileType = "image/png") {
 
             clearTimeout(timeoutId);
 
-            if (!response.ok) {
-                console.warn(`OCR API key ${key} returned status ${response.status}, trying next.`);
-                continue;
-            }
+            if (!response.ok) continue;
 
             const data = await response.json();
-
-            if (data.IsErroredOnProcessing) {
-                console.warn("OCR engine processing error:", data.ErrorMessage);
-                continue;
-            }
+            if (data.IsErroredOnProcessing) continue;
 
             if (Array.isArray(data.ParsedResults) && data.ParsedResults.length > 0) {
                 const combined = data.ParsedResults
                     .map((r) => r.ParsedText || "")
-                    .filter(Boolean)
+                    .filter((t) => t && !t.includes("demo key is for testing only"))
                     .join("\n\n---\n\n");
 
                 if (combined.trim().length > 0) {
                     return combined.trim();
                 }
             }
-        } catch (err) {
-            console.warn(`OCR attempt with key ${key} failed:`, err);
+        } catch {
+            // silent retry
         }
     }
 
@@ -188,7 +198,8 @@ export function classifyDocumentType(text, fileName = "") {
         lower.includes("srl") ||
         lower.includes("thyrocare") ||
         lower.includes("patient name") ||
-        lower.includes("ref by")
+        lower.includes("ref by") ||
+        lower.includes("lab report")
     ) {
         return "medical_report";
     }
@@ -280,20 +291,20 @@ export async function extractAttachmentContent(file) {
     let source = "none";
     let ocrSuccess = false;
 
+    const base64Part = data.includes(",") ? data.split(",")[1] : data;
+    const buffer = Buffer.from(base64Part, "base64");
+
     // 1. Process PDF Document
     if (isPdf) {
         try {
-            const base64Part = data.includes(",") ? data.split(",")[1] : data;
-            const pdfBuffer = Buffer.from(base64Part, "base64");
-
-            // Tier 1: Try native stream extraction
-            const nativeText = extractTextFromPdfBuffer(pdfBuffer);
-            if (nativeText && nativeText.length > 50) {
+            // Tier 1: Try native stream extraction (fast & offline)
+            const nativeText = extractTextFromPdfBuffer(buffer);
+            if (nativeText && nativeText.length > 40) {
                 extractedText = nativeText;
                 source = "pdf_native_stream";
                 ocrSuccess = true;
             } else {
-                // Tier 2: Scanned PDF fallback to OCR engine
+                // Tier 2: Scanned PDF fallback to OCR
                 const ocrText = await callOcrEngine(data, "application/pdf");
                 if (ocrText && ocrText.length > 20) {
                     extractedText = ocrText;
@@ -309,11 +320,20 @@ export async function extractAttachmentContent(file) {
     // 2. Process Image / Photo / Screenshot
     else if (isImage) {
         try {
-            const ocrText = await callOcrEngine(data, type || "image/png");
-            if (ocrText && ocrText.length > 0) {
-                extractedText = ocrText;
-                source = "ocr_engine_image";
+            // Tier 1: Local Neural Tesseract OCR (Fast, offline, robust)
+            const localText = await runLocalTesseractOcr(buffer);
+            if (localText && localText.length > 15) {
+                extractedText = localText;
+                source = "local_tesseract_ocr";
                 ocrSuccess = true;
+            } else {
+                // Tier 2: OCR.space web fallback
+                const webText = await callOcrEngine(data, type || "image/png");
+                if (webText && webText.length > 10) {
+                    extractedText = webText;
+                    source = "ocr_space_engine";
+                    ocrSuccess = true;
+                }
             }
         } catch (err) {
             console.warn("Image OCR handler notice:", err);
@@ -323,8 +343,7 @@ export async function extractAttachmentContent(file) {
     // 3. Process Text / CSV / JSON / Code Files
     else {
         try {
-            const base64Part = data.includes(",") ? data.split(",")[1] : data;
-            extractedText = Buffer.from(base64Part, "base64").toString("utf-8");
+            extractedText = buffer.toString("utf-8");
             source = "plain_text_decode";
             ocrSuccess = extractedText.length > 0;
         } catch (err) {
