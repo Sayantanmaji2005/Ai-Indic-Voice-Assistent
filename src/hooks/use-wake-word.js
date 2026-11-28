@@ -200,17 +200,18 @@ export function useWakeWord({
 
             recognition.onend = () => {
                 isStartingRef.current = false;
-                setIsListeningForWakeWord(false);
                 recognitionRef.current = null;
 
-                // Seamlessly restart continuous wake-word listening unless blocked by permission or stopped
+                // Seamlessly restart continuous wake-word listening without unnecessary state flips
                 if (enabledRef.current && !isExplicitlyStoppedRef.current && !isBlockedByPermissionRef.current) {
                     if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
                     restartTimeoutRef.current = setTimeout(() => {
                         if (enabledRef.current && !isExplicitlyStoppedRef.current && !isBlockedByPermissionRef.current) {
                             initSpeechRecognition();
                         }
-                    }, 400);
+                    }, 800);
+                } else {
+                    setIsListeningForWakeWord(false);
                 }
             };
 

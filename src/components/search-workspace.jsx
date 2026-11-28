@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, memo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -61,7 +61,7 @@ const modes = [
     { id: "news", label: "Live News", desc: "Latest regional and national reports", icon: Newspaper },
     { id: "deep", label: "Deep Research", desc: "Comprehensive fact analysis", icon: Compass },
 ];
-export function SearchWorkspace({ initialQuery = "", initialLanguage = "auto", onReturnHome, onLaunchLiveAssistant, } = {}) {
+export const SearchWorkspace = React.memo(function SearchWorkspace({ initialQuery = "", initialLanguage = "auto", onReturnHome, onLaunchLiveAssistant, } = {}) {
     const [query, setQuery] = useState(initialQuery);
     const [language, setLanguage] = useState(initialLanguage);
     const [mode, setMode] = useState("ai");
@@ -632,7 +632,7 @@ export function SearchWorkspace({ initialQuery = "", initialLanguage = "auto", o
           </div>
         </div>)}
     </main>);
-}
+});
 function BrandMark({ onReturnHome }) {
     if (onReturnHome) {
         return (<div className="brand" onClick={onReturnHome} style={{ cursor: "pointer" }} role="button" tabIndex={0} aria-label="Return to Indica home">
@@ -897,8 +897,8 @@ function parseMarkdownBlocks(rawText) {
     }
     return blocks;
 }
-function FormattedAnswer({ text }) {
-    const blocks = parseMarkdownBlocks(text);
+const FormattedAnswer = React.memo(function FormattedAnswer({ text }) {
+    const blocks = useMemo(() => parseMarkdownBlocks(text), [text]);
     return (<div className="answer-copy">
       {blocks.map((block, idx) => {
             switch (block.type) {
@@ -1001,8 +1001,8 @@ function FormattedAnswer({ text }) {
             }
         })}
     </div>);
-}
-function VisualGallery({ images, query }) {
+});
+const VisualGallery = React.memo(function VisualGallery({ images, query }) {
     const [selectedImage, setSelectedImage] = useState(null);
     if (!images || images.length === 0)
         return null;
@@ -1056,8 +1056,8 @@ function VisualGallery({ images, query }) {
           </div>
         </div>)}
     </section>);
-}
-function ResultPanel({ result, sourceOpen, setSourceOpen, whyOpen, setWhyOpen, isSpeaking, speakAnswer, submitSearch, copied, onCopy, audioSpeed, setAudioSpeed, }) {
+});
+const ResultPanel = React.memo(function ResultPanel({ result, sourceOpen, setSourceOpen, whyOpen, setWhyOpen, isSpeaking, speakAnswer, submitSearch, copied, onCopy, audioSpeed, setAudioSpeed, }) {
     const [reasoningOpen, setReasoningOpen] = useState(true);
     const [showOcrText, setShowOcrText] = useState(false);
     return (<section className="answer-layout">
@@ -1378,4 +1378,4 @@ function ResultPanel({ result, sourceOpen, setSourceOpen, whyOpen, setWhyOpen, i
         </div>
       </aside>
     </section>);
-}
+});

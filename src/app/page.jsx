@@ -32,12 +32,12 @@ export default function HomePage() {
         onWakeWord: handleWakeWordTrigger,
     });
 
-    const handleLaunchLiveAssistant = () => {
+    const handleLaunchLiveAssistant = useCallback(() => {
         setIsLiveOpen(true);
-    };
+    }, []);
 
     // If user is NOT authenticated with Google, clicking any app launch prompt opens Google Sign-In
-    const handleLaunchApp = (query, language) => {
+    const handleLaunchApp = useCallback((query, language) => {
         if (!isAuthenticated) {
             openAuthModal();
             return;
@@ -45,9 +45,9 @@ export default function HomePage() {
         setInitialLaunchQuery(query);
         setInitialLaunchLang(language);
         setCurrentView("workspace");
-    };
+    }, [isAuthenticated, openAuthModal]);
 
-    const handleOpenInWorkspace = (query, language) => {
+    const handleOpenInWorkspace = useCallback((query, language) => {
         setIsLiveOpen(false);
         if (!isAuthenticated) {
             openAuthModal();
@@ -56,17 +56,17 @@ export default function HomePage() {
         setInitialLaunchQuery(query);
         setInitialLaunchLang(language);
         setCurrentView("workspace");
-    };
+    }, [isAuthenticated, openAuthModal]);
 
     const handleSplashComplete = useCallback(() => {
         setShowSplash(false);
     }, []);
 
-    const handleReturnHome = () => {
+    const handleReturnHome = useCallback(() => {
         setInitialLaunchQuery(undefined);
         setInitialLaunchLang(undefined);
         setCurrentView("landing");
-    };
+    }, []);
 
     return (
         <>

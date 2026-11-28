@@ -986,7 +986,7 @@ a {
   min-height: 0;
   overflow-y: auto; /* ONLY THIS AREA SCROLLS! */
   overflow-x: hidden;
-  scroll-behavior: smooth;
+  /* native 120fps wheel scroll */
   padding: 44px clamp(20px, 4vw, 56px) 70px;
 }
 
@@ -1038,7 +1038,7 @@ a {
   width: 700px;
   height: 280px;
   background: radial-gradient(circle, rgba(46, 175, 126, 0.14) 0%, rgba(255, 255, 255, 0) 70%);
-  filter: blur(40px);
+  /* removed 40px blur for 120fps performance */
   pointer-events: none;
   z-index: 0;
 }
@@ -3522,7 +3522,7 @@ a {
   border-radius: 50%;
   background: radial-gradient(circle, rgba(211, 91, 55, 0.22) 0%, rgba(246, 243, 237, 0.05) 50%, transparent 70%);
   pointer-events: none;
-  filter: blur(40px);
+  /* removed 40px blur for 120fps performance */
   animation: auraPulse 6s ease-in-out infinite alternate;
 }
 
@@ -6174,7 +6174,7 @@ a {
   background: #f6f3ed;
   color: #1a1916;
   font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  scroll-behavior: smooth;
+  /* native 120fps wheel scroll */
   user-select: text;
   -ms-overflow-style: none !important; /* IE and Edge */
   scrollbar-width: none !important; /* Firefox */
@@ -10066,4 +10066,54 @@ html, body {
 .attachment-listen-btn svg {
   stroke-width: 1.8px !important;
   fill: none !important;
+}
+
+/* ==========================================================================
+   120 FPS HARDWARE ACCELERATION & ZERO-LAG SCROLLING
+   ========================================================================== */
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.shell,
+.workspace,
+.content {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+.search-stage,
+.answer-layout,
+.results-main,
+.results-side {
+  transform: translateZ(0);
+  contain: layout style;
+}
+
+.answer-card {
+  contain: content;
+  transform: translateZ(0);
+}
+
+.web-results {
+  contain: content;
+  transform: translateZ(0);
+}
+
+/* Eliminate heavy blur repaints during active scrolling */
+.search-stage::before {
+  opacity: 0.45 !important;
+  filter: none !important;
+  border-radius: 50% !important;
+}
+
+/* Smooth 120hz interaction states */
+button,
+a,
+input {
+  touch-action: manipulation;
 }

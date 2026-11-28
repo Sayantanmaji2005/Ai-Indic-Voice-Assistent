@@ -4,7 +4,7 @@ import Image from "next/image";
 import { MessageSquare, PanelLeftClose, Search, SquarePen, Trash2, X, } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { UserProfileMenu } from "@/components/user-profile-menu";
-export function ChatGptSidebar({ currentQuery, onNewChat, onSelectChat, isOpen, onToggle, onReturnHome, }) {
+export const ChatGptSidebar = React.memo(function ChatGptSidebar({ currentQuery, onNewChat, onSelectChat, isOpen, onToggle, onReturnHome, }) {
     const { user, history, deleteHistoryItem, openAuthModal } = useAuth();
     const [activeItem, setActiveItem] = useState("");
     const [filterSearch, setFilterSearch] = useState("");
@@ -95,4 +95,4 @@ export function ChatGptSidebar({ currentQuery, onNewChat, onSelectChat, isOpen, 
       {/* Bottom User Profile Section with Menu Dropdown */}
       <UserProfileMenu variant="sidebar" onSelectHistory={onSelectChat}/>
     </aside>);
-}
+});
