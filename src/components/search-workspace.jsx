@@ -40,6 +40,11 @@ import {
     Zap,
     ScanLine,
     TrendingUp,
+    Briefcase,
+    Stethoscope,
+    Pill,
+    Receipt,
+    GraduationCap,
 } from "lucide-react";
 import { IndicaApiClient } from "@/lib/api-client";
 import { detectLanguage, languageByCode } from "@/lib/languages";
@@ -1061,7 +1066,7 @@ function ResultPanel({ result, sourceOpen, setSourceOpen, whyOpen, setWhyOpen, i
         <div className={`audio-player-banner ${isSpeaking ? "playing" : ""}`}>
           <div className="audio-player-left">
             <button onClick={speakAnswer} className={`audio-play-trigger ${isSpeaking ? "active" : ""}`} aria-label={isSpeaking ? "Pause Indian voice" : "Play Indian voice"}>
-              {isSpeaking ? <Pause size={18} fill="currentColor"/> : <Play size={18} fill="currentColor"/>}
+              {isSpeaking ? <Pause size={17} strokeWidth={2.2} /> : <Play size={17} strokeWidth={2.2} style={{ marginLeft: "2px" }} />}
             </button>
             <div className="audio-info">
               <strong>{isSpeaking ? "Speaking" : "Listen to Explanation"}</strong>
@@ -1095,19 +1100,19 @@ function ResultPanel({ result, sourceOpen, setSourceOpen, whyOpen, setWhyOpen, i
               <div className="analyzed-badge-row">
                 <span className={`analyzed-badge ${result.documentCategory === "resume_cv" ? "badge-resume" : result.documentCategory === "medical_report" ? "badge-medical" : ""}`}>
                   {result.documentCategory === "resume_cv" ? (
-                    <>💼 Resume & Career Analysis</>
+                    <><Briefcase size={14} strokeWidth={1.8} className="doc-type-icon" /> Resume & Career Profile</>
                   ) : result.documentCategory === "medical_report" ? (
-                    <>🩺 Medical Lab Report Analysis</>
+                    <><Stethoscope size={14} strokeWidth={1.8} className="doc-type-icon" /> Medical Lab Report</>
                   ) : result.documentCategory === "prescription" ? (
-                    <>💊 Prescription Analysis</>
+                    <><Pill size={14} strokeWidth={1.8} className="doc-type-icon" /> Prescription Analysis</>
                   ) : result.documentCategory === "invoice_bill" ? (
-                    <>🧾 Invoice & Bill Breakdown</>
+                    <><Receipt size={14} strokeWidth={1.8} className="doc-type-icon" /> Invoice & Bill Breakdown</>
                   ) : result.documentCategory === "academic_marksheet" ? (
-                    <>🎓 Academic Marksheet</>
+                    <><GraduationCap size={14} strokeWidth={1.8} className="doc-type-icon" /> Academic Marksheet</>
                   ) : result.attachedFile.type.startsWith("image/") ? (
-                    <><ImageIcon size={14} className="black-outline-icon"/> Uploaded Photo Scan</>
+                    <><ImageIcon size={14} strokeWidth={1.8} className="doc-type-icon"/> Uploaded Photo Scan</>
                   ) : (
-                    <><FileText size={14} className="black-outline-icon"/> Uploaded Document</>
+                    <><FileText size={14} strokeWidth={1.8} className="doc-type-icon"/> Uploaded Document</>
                   )}
                 </span>
                 <span className="analyzed-filename" title={result.attachedFile.name}>
@@ -1125,13 +1130,13 @@ function ResultPanel({ result, sourceOpen, setSourceOpen, whyOpen, setWhyOpen, i
                 >
                   {isSpeaking ? (
                     <>
-                      <Pause size={13} />
+                      <Pause size={13} strokeWidth={2} />
                       <span>Speaking Report...</span>
                       <span className="live-audio-mini-pulse" />
                     </>
                   ) : (
                     <>
-                      <Volume2 size={13} />
+                      <Volume2 size={13} strokeWidth={2} />
                       <span>Listen to Report</span>
                     </>
                   )}
@@ -1286,17 +1291,17 @@ function ResultPanel({ result, sourceOpen, setSourceOpen, whyOpen, setWhyOpen, i
           {/* Action Toolbar */}
           <div className="answer-actions">
             <button onClick={speakAnswer} className={`voice-action-btn ${isSpeaking ? "speaking" : ""}`}>
-              {isSpeaking ? <Pause size={15} fill="currentColor"/> : <Volume2 size={15} strokeWidth={1.75} className="black-outline-icon"/>}
+              {isSpeaking ? <Pause size={15} strokeWidth={1.8} /> : <Volume2 size={15} strokeWidth={1.8} className="black-outline-icon"/>}
               <span>{isSpeaking ? "Pause Voice" : "Listen Explanation"}</span>
             </button>
 
             <button onClick={() => onCopy(result.answer)} className="action-btn">
-              {copied ? <Check size={15} color="#167a53"/> : <Copy size={15}/>}
+              {copied ? <Check size={15} strokeWidth={2} color="#167a53"/> : <Copy size={15} strokeWidth={1.8} />}
               <span>{copied ? "Copied!" : "Copy Answer"}</span>
             </button>
 
             <button onClick={() => setWhyOpen(!whyOpen)} className="action-btn">
-              <CircleHelp size={15}/>
+              <CircleHelp size={15} strokeWidth={1.8} />
               <span>Why this answer?</span>
             </button>
           </div>
